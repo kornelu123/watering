@@ -1,0 +1,5 @@
+build/
+serv/build/
+pico-client/build
+.gdb_history
+pico-client/.gdb_history
