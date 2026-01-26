@@ -8,7 +8,10 @@ function(create_slot_target slot_name flash_offset)
 
   add_executable(${target_name}
     main.c
+    dispatcher.c
     sched.c
+    ${CMAKE_SOURCE_DIR}/common/crc.c
+    ${CMAKE_SOURCE_DIR}/../common/helpers.c
   )
 
   pico_enable_stdio_usb(${target_name} 1)
@@ -16,6 +19,7 @@ function(create_slot_target slot_name flash_offset)
 
   target_include_directories(${target_name} PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/common/
     ${CMAKE_CURRENT_LIST_DIR}/..
   )
 
@@ -49,6 +53,11 @@ function(create_slot_target slot_name flash_offset)
     WIFI_SSID="${WIFI_SSID}"
     WIFI_PASS="${WIFI_PASS}"
     TEST_TCP_SERVER_IP="${TEST_TCP_SERVER_IP}"
+    CRC_SEED=${CRC_SEED}
+    BOOTLOADER_ORIGIN=${BOOTLOADER_ORIGIN}
+    SLOT0_ORIGIN=${SLOT0_ORIGIN}
+    SLOT1_ORIGIN=${SLOT1_ORIGIN}
+    SLOT2_ORIGIN=${SLOT2_ORIGIN}
   )
   unset(
       FLASH_ORIGIN
@@ -57,13 +66,13 @@ endfunction()
 
 pico_sdk_init()
 
-set(SLOT0_ORIGIN 0x10020000)
-set(SLOT1_ORIGIN 0x100A0000)
-set(SLOT2_ORIGIN 0x10120000)
-
 set(
     PICO_NO_BINARY_INFO 1
     PICO_NO_FLASH 1
+)
+
+set(
+  CMAKE_BUILD_TYPE Release
 )
 
 foreach(slot_name slot0 slot1 slot2)

@@ -1,4 +1,5 @@
 #include <stdio.h>
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -25,7 +26,7 @@ init_task(const uint32_t timeout_ms, const char *name, task_fn task_function)
   task.timeout_ms = timeout_ms;
   task.realise = task_function;
 
-  snprintf(task.name, sizeof(task.name), "%16s", name);
+  snprintf(task.name, 16, "%16s", name);
 }
 
   int

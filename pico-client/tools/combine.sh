@@ -5,6 +5,9 @@ BOOTLOADER_OFFSET=$(($1 - 0x10000000))
 SLOT0_OFFSET=$(($2 - 0x10000000))
 SLOT1_OFFSET=$(($3 - 0x10000000))
 SLOT2_OFFSET=$(($4 - 0x10000000))
+CRC_SEED=$(($5))
+
+printf "CRC_SEED equal to 0x%x\n" ${CRC_SEED}
 
 # Input BIN files
 BOOTLOADER_BIN="bootloader/bootloader.bin"
@@ -20,7 +23,7 @@ COMBINED_UF2="combined.uf2"
 FLASH_SIZE=$((2 * 1024 * 1024))
 
 # Slot size (512KB each)
-SLOT_SIZE=$((512 * 1024))
+SLOT_SIZE=$((512*1024))
 
 echo "=== Combining BIN files into single UF2 ==="
 
@@ -28,9 +31,6 @@ echo "=== Combining BIN files into single UF2 ==="
 echo "Creating empty flash image of ${FLASH_SIZE} bytes..."
 dd if=/dev/zero of=${COMBINED_BIN} bs=1 count=${FLASH_SIZE} status=none
 
-# ... wcześniejsza część skryptu ...
-
-# Function to calculate CRC32 using IEEE 802.3 polynomial
 calculate_crc32_python() {
     local bin_file=$1
     python3 -c "
@@ -40,9 +40,9 @@ import struct
 def swap32(value):
     return struct.unpack('<I', struct.pack('>I', value))[0]
 
-def calculate_crc32_ieee8023(data, initial=0x00000000):
+def calculate_crc32_ieee8023(data):
     '''Calculate CRC32 using IEEE 802.3 polynomial'''
-    crc = initial
+    crc = ${CRC_SEED}
 
     for value in data:
       crc += value
@@ -75,9 +75,8 @@ calculate_and_append_crc() {
         return
     fi
 
-    # Check if slot fits in 512KB minus 4 bytes for CRC
     if [ ${original_size} -gt $((SLOT_SIZE - 4)) ]; then
-        echo "  Error: ${slot_name} is too large for slot (${original_size} > $((SLOT_SIZE - 4)))"
+        echo "  Error: ${slot_name} is too large for slot (${original_size} > $((SLOT_SIZE - 4)))" 1>&2
         exit 1
     fi
 
@@ -88,13 +87,7 @@ calculate_and_append_crc() {
     dd if=${bin_file} of=${temp_file} bs=1 count=${original_size} status=none
 
     # Calculate CRC32 of the original data
-    local crc_value
-    if command -v crc32 &> /dev/null; then
-        crc_value=$(calculate_crc32_python "${temp_file}")
-    else
-        echo "  Error: crc32 command not found. Install with: brew install crc32 (macOS) or apt-get install libarchive-zip-perl (Linux)"
-        exit 1
-    fi
+    crc_value=$(calculate_crc32_python ${temp_file})
 
     # Pad the rest of the slot with zeros if needed
     local current_size=$((original_size))
@@ -103,9 +96,11 @@ calculate_and_append_crc() {
         dd if=/dev/zero of=${temp_file} bs=1 seek=${current_size} count=${padding_size} conv=notrunc status=none
     fi
 
-    bytes=$(printf "%b" "$(echo "$crc_value" | sed 's/../\\x&/g')")
     # Append CRC32 bytes to the end of slot
-    echo -n ${bytes} >> ${temp_file}
+    python3 -c "
+    with open('${temp_file}', 'ab') as myfile:
+      myfile.write(bytearray.fromhex('${crc_value}'))
+    "
 
     echo "${temp_file}"
 }
@@ -128,8 +123,7 @@ extract_and_place_with_crc() {
     local offset_dec=$(printf "%d" ${offset})
     dd if="${crc_file}" of="${COMBINED_BIN}" bs=1 seek="${offset_dec}" conv=notrunc status=none
 
-    # Cleanup temporary files
-    rm -f ${crc_file}
+    mv ${crc_file} ./${name}_${offset}.crc
 }
 
 # Special function for bootloader (no CRC needed)

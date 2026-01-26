@@ -3,4 +3,4 @@
 #include <stdint.h>
 #include <stddef.h>
 
-uint32_t crc32(const void *data, size_t len, uint32_t crc);
+uint32_t crc32(const void *data, size_t len);

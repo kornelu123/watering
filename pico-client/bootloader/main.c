@@ -2,14 +2,21 @@
 
 #include "crc.c"
 #include "slot.h"
+#include "shared_mem.h"
 
 #include "hardware/resets.h"
 #include "hardware/regs/m0plus.h"
 #include "pico/binary_info.h"
 
-bi_decl(bi_program_version_string("1.01"));
+bool
+validate_crc(watering_slot_t *slot)
+{
+  const uint32_t exp_crc = crc32(slot->data, SLOT_SIZE);
 
-int main(void);
+  return (slot->crc == exp_crc);
+}
+
+int main();
 
 //****************************************************************************
 // This is normally provided as part of pico_stdlib so we have to provide it
@@ -17,8 +24,10 @@ int main(void);
 void exit(int ret)
 {
   (void)ret;
-  while(true)
+  while (true){
     tight_loop_contents();
+  }
+  main();
 }
 
 //****************************************************************************
@@ -51,10 +60,11 @@ int main(void)
 {
   unreset_block_wait(RESETS_RESET_DMA_BITS);
 
-  if (validate_crc(slots[2])) {
+  const uint8_t slot_id = get_running_slot_id();
 
+  if (validate_crc(slots[slot_id])) {
     reset_block(RESETS_RESET_DMA_BITS);
 
-    jump_to_app(slots[2]);
+    jump_to_app(slots[slot_id]);
   }
 }
