@@ -8,6 +8,7 @@
 
 #include "uart_task.c"
 #include "disp_task.c"
+#include "wd_task.c"
 
 #define MIN_SCHED_TIMEOUT_MS 10000
 
@@ -41,6 +42,9 @@ init_tasks(void)
 
   task_ctx_t disp_task_ctx = init_task(10000, "Display task", &disp_task, &disp_init);
   add_task(&disp_task_ctx);
+
+  task_ctx_t wd_task_ctx = init_task(4000, "Watchdog task", &wd_task, &wd_init);
+  add_task(&wd_task_ctx);
 }
 
   int
