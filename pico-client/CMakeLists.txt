@@ -4,7 +4,7 @@ include(${PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 include(${PICO_EXTRAS_PATH}/external/pico_extras_import.cmake)
 include(${CMAKE_SOURCE_DIR}/../common_data_import.cmake)
 
-project(watering C CXX ASM)
+project(watering LANGUAGES C CXX ASM VERSION 1.0.0)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)

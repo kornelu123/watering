@@ -12,8 +12,6 @@
 
 #define SLOT_SIZE (SLOT1_ORIGIN - SLOT0_ORIGIN)
 
-#define dbg_printf printf
-
 extern struct tcp_pcb *main_tcp;
 
 uint8_t tx_buf[sizeof(packet_t)];
@@ -56,26 +54,15 @@ dispatch(packet_t *in_packet, uint16_t len)
   const uint8_t cmd = in_packet->header.cmd_ack;
   const uint16_t msg_id = in_packet->header.msg_id;
 
-  //dbg_printf("Recved:\n");
-  //for (int i=0; i<len; i++) {
-  //  dbg_printf("%02X:", ((uint8_t *)in_packet)[i]);
-  //  if ( i%8 == 7) {
-  //    dbg_printf("\n");
-  //  }
-  //}
-  //dbg_printf("\n\n");
-
   fflush(stdout);
 
   if (dispatch_table[cmd] == NULL) {
     send_error_response(ACK_CMD_ERR, msg_id);
-    printf("Not known command: %2X\n", cmd);
     return;
   }
 
   if (len != sizeof(header_t) + in_packet->header.length) {
     send_error_response(ACK_LEN_ERR, msg_id);
-    printf("Packet length: %u, exp: %u\n", len, in_packet->header.length + sizeof(header_t));
     return;
   }
 
@@ -127,24 +114,18 @@ flash_erase(packet_t *packet, packet_t *out_packet, uint16_t *out_len)
   const uint32_t addr = get_be24(packet->data.flash_erase.addr);
 
   if ( packet->header.length != sizeof(erase_flash_data_t) ) {
-    dbg_printf("header length = %x, exp = %x\n", packet->header.length, sizeof(write_flash_data_t));
     return ACK_LEN_ERR;
   }
 
   if ( addr + FLASH_PAGE_SIZE > CUR_SLOT_ORIGIN && addr < CUR_SLOT_ORIGIN + SLOT_SIZE ) {
-    dbg_printf("Addr invalid: %x, cur slot: %x/%x\n", addr
-                                                    , CUR_SLOT_ORIGIN, CUR_SLOT_ORIGIN + SLOT_SIZE);
     return ACK_PARAM_ERR;
   }
 
   if ( addr >= BOOTLOADER_ORIGIN && addr < SLOT0_ORIGIN ) {
-    dbg_printf("Addr invalid: %x, reserved addresses: %x/%x\n", addr
-                                                              , BOOTLOADER_ORIGIN, SLOT0_ORIGIN);
     return ACK_PARAM_ERR;
   }
 
   if ( addr % FLASH_PAGE_SIZE != 0) {
-    dbg_printf("Addr invalid: %x", addr);
     return ACK_PARAM_ERR;
   }
   uint32_t ints = save_and_disable_interrupts();
@@ -164,28 +145,14 @@ flash_write(packet_t *packet, packet_t *out_packet, uint16_t *out_len)
   const uint32_t addr = get_be24(packet->data.flash_write.addr);
 
   if ( packet->header.length != sizeof(write_flash_data_t) ) {
-    dbg_printf("header length = %x, exp = %x\n", packet->header.length, sizeof(write_flash_data_t));
     return ACK_LEN_ERR;
   }
 
-  dbg_printf("Header: %02X\n"
-             "Msg Id: %04X\n"
-             "Length: %04X\n"
-             "Addr:   %08X\n",
-             packet->header.cmd_ack,
-             packet->header.msg_id,
-             packet->header.length,
-             addr);
-
   if ( addr + MAX_FLASH_DATA >= CUR_SLOT_ORIGIN && addr < CUR_SLOT_ORIGIN + SLOT_SIZE ) {
-    dbg_printf("Addr invalid: %x, cur slot: %x/%x\n", addr
-                                                    , CUR_SLOT_ORIGIN, CUR_SLOT_ORIGIN + SLOT_SIZE);
     return ACK_PARAM_ERR;
   }
 
   if ( addr >= BOOTLOADER_ORIGIN && addr < SLOT0_ORIGIN ) {
-    dbg_printf("Addr invalid: %x, reserved addresses: %x/%x\n", addr
-                                                              , BOOTLOADER_ORIGIN, SLOT0_ORIGIN);
     return ACK_PARAM_ERR;
   }
 
@@ -220,6 +187,25 @@ get_running_slot_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out
 }
 
 uint8_t
+get_slot_version(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len)
+{
+  if ( in_packet->header.length != 0 ) {
+    return ACK_LEN_ERR;
+  }
+
+  read_running_slot_resp_t *resp = (read_running_slot_resp_t *)out_packet->data.buf;
+
+  static_assert(CUR_SLOT_ORIGIN == SLOT0_ORIGIN ||
+                CUR_SLOT_ORIGIN == SLOT1_ORIGIN ||
+                CUR_SLOT_ORIGIN == SLOT2_ORIGIN);
+
+  resp->slot_id = (CUR_SLOT_ORIGIN - SLOT0_ORIGIN)/(512*1024);
+  *out_len = 1;
+
+  return ACK_OK;
+}
+
+uint8_t
 set_active_slot_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len)
 {
   if ( in_packet->header.length != sizeof(set_active_slot_t) ) {
@@ -231,15 +217,6 @@ set_active_slot_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_
   if (set_running_slot(req->slot_id)) {
     return ACK_PARAM_ERR;
   }
-
-  dbg_printf("Header: %02X\n"
-             "Msg Id: %04X\n"
-             "Length: %04X\n"
-             "Slot_Id:%02X\n",
-             in_packet->header.cmd_ack,
-             in_packet->header.msg_id,
-             in_packet->header.length,
-             req->slot_id);
 
   *out_len=0;
 

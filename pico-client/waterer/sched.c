@@ -7,6 +7,7 @@
 #include "sched.h"
 
 #include "uart_task.c"
+#include "disp_task.c"
 
 #define MIN_SCHED_TIMEOUT_MS 10000
 
@@ -19,21 +20,27 @@ get_task_count(void) {
 }
 
   static inline task_ctx_t
-init_task(const uint32_t timeout_ms, const char *name, task_fn task_function) 
+init_task(const uint32_t timeout_ms, const char *name, task_fn task_function, task_init_fn init_function) 
 {
   task_ctx_t task;
 
   task.timeout_ms = timeout_ms;
   task.realise = task_function;
+  task.init = init_function;
 
   snprintf(task.name, 16, "%16s", name);
+
+  return task;
 }
 
   int
 init_tasks(void)
 {
-  task_ctx_t uart_task_ctx = init_task(1000, "Uart task", &uart_task);
+  task_ctx_t uart_task_ctx = init_task(1000, "Uart task", &uart_task, NULL);
   add_task(&uart_task_ctx);
+
+  task_ctx_t disp_task_ctx = init_task(10000, "Display task", &disp_task, &disp_init);
+  add_task(&disp_task_ctx);
 }
 
   int
@@ -59,6 +66,12 @@ __run_sched(void)
 
   for (int i=0; i<get_task_count(); i++) {
     tasks[i].deadline = get_absolute_time();
+  }
+
+  for (int i=0; i<task_count; i++) {
+    if (tasks[i].init != NULL) {
+      tasks[i].init();
+    }
   }
 
   while (true) {

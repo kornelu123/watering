@@ -21,7 +21,10 @@
 #define POLL_TIME_S 10
 
 #define TCP_PORT 8080
-#define DEBUG_printf printf
+
+#if !defined(PROJECT_VERSION_MAJOR) || !defined(PROJECT_VERSION_MINOR)|| !defined(PROJECT_VERSION_PATCH)
+  #error "PROJECT_VERSION cannot be read"
+#endif
 
 typedef struct TCP_CLIENT_T_ {
   struct tcp_pcb *tcp_pcb;
@@ -47,7 +50,6 @@ static err_t tcp_client_close(void *arg) {
     tcp_err(state->tcp_pcb, NULL);
     err = tcp_close(state->tcp_pcb);
     if (err != ERR_OK) {
-      DEBUG_printf("close failed %d, calling abort\n", err);
       tcp_abort(state->tcp_pcb);
       err = ERR_ABRT;
     }
@@ -58,7 +60,6 @@ static err_t tcp_client_close(void *arg) {
 
 static err_t tcp_client_sent(void *arg, struct tcp_pcb *tpcb, u16_t len) {
   TCP_CLIENT_T *state = (TCP_CLIENT_T*)arg;
-  DEBUG_printf("tcp_client_sent %u\n", len);
   state->sent_len += len;
 
   return ERR_OK;
@@ -69,11 +70,9 @@ static err_t tcp_client_connected(void *arg, struct tcp_pcb *tpcb, err_t err) {
   main_tcp = state->tcp_pcb;
 
   if (err != ERR_OK) {
-    printf("connect failed %d\n", err);
     return -1;
   }
   state->connected = true;
-  DEBUG_printf("Waiting for buffer from server\n");
   return ERR_OK;
 }
 
@@ -82,14 +81,10 @@ static err_t tcp_client_poll(void *arg, struct tcp_pcb *tpcb) {
 }
 
 static void tcp_client_err(void *arg, err_t err) {
-  if (err != ERR_ABRT) {
-    DEBUG_printf("tcp_client_err %d\n", err);
-  }
 }
 
 err_t tcp_client_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
   TCP_CLIENT_T *state = (TCP_CLIENT_T*)arg;
-  DEBUG_printf("tcp_recv: %u\n", p->tot_len);
 
   cyw43_arch_lwip_check();
   if (!p) {
@@ -115,13 +110,10 @@ err_t tcp_client_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err
 
 static bool tcp_client_open(void *arg) {
   TCP_CLIENT_T *state = (TCP_CLIENT_T*)arg;
-  DEBUG_printf("Connecting to %s port %u\n", ip4addr_ntoa(&state->remote_addr), TCP_PORT);
   state->tcp_pcb = tcp_new_ip_type(IP_GET_TYPE(&state->remote_addr));
   if (!state->tcp_pcb) {
-    DEBUG_printf("failed to create pcb\n");
     return false;
   }
-  DEBUG_printf("succesfylly created pcb\n");
 
   tcp_arg(state->tcp_pcb, state);
   tcp_poll(state->tcp_pcb, tcp_client_poll, POLL_TIME_S * 2);
@@ -133,7 +125,6 @@ static bool tcp_client_open(void *arg) {
 
   cyw43_arch_lwip_begin();
   err_t err = tcp_connect(state->tcp_pcb, &state->remote_addr, TCP_PORT, tcp_client_connected);
-  DEBUG_printf("succ conn\n");
   cyw43_arch_lwip_end();
 
   return err == ERR_OK;
@@ -142,7 +133,6 @@ static bool tcp_client_open(void *arg) {
 static TCP_CLIENT_T* tcp_client_init(void) {
   TCP_CLIENT_T *state = calloc(1, sizeof(TCP_CLIENT_T));
   if (!state) {
-    DEBUG_printf("failed to allocate state\n");
     return NULL;
   }
 
@@ -171,7 +161,6 @@ void __attribute__((__noreturn__))main() {
   stdio_init_all();
 
   if (cyw43_arch_init()) {
-    DEBUG_printf("failed to initialise\n");
     exit(-1);
   }
 
@@ -179,7 +168,6 @@ void __attribute__((__noreturn__))main() {
 
   while (1) {
     if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASS, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-      DEBUG_printf("failed to connect.\n");
     } else {
       printf("Connected.\n");
       cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);

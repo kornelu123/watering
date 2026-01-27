@@ -26,6 +26,7 @@ function(create_slot_target slot_name flash_offset)
   target_link_libraries(${target_name}
     pico_cyw43_arch_lwip_threadsafe_background
     pico_stdlib
+    hardware_i2c
   )
 
   # Create linker script with correct origin
@@ -58,6 +59,9 @@ function(create_slot_target slot_name flash_offset)
     SLOT0_ORIGIN=${SLOT0_ORIGIN}
     SLOT1_ORIGIN=${SLOT1_ORIGIN}
     SLOT2_ORIGIN=${SLOT2_ORIGIN}
+    PROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+    PROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+    PROJECT_VERSION_PATCH=${PROJECT_VERSION_PATCH}
   )
   unset(
       FLASH_ORIGIN
