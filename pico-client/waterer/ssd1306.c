@@ -5,6 +5,7 @@
 #include "hardware/gpio.h"
 
 #include "font.h"
+#include "pins.h"
 
 #define SSD1306_I2C_CLK             400
 
@@ -15,9 +16,6 @@
 #define SET_CONTRAST    0x81
 
 #define SSD1306_ADDR    0x3C
-
-#define SSD_SDA_PIN     4
-#define SSD_SCL_PIN     5
 
 #define SSD1306_SET_MEM_MODE        _u(0x20)
 #define SSD1306_SET_COL_ADDR        _u(0x21)
@@ -80,7 +78,7 @@ struct render_area frame_area = {
   .buflen=(((SSD1306_WIDTH)*(SSD1306_NUM_PAGES))),
 };
 
-uint8_t buf[((SSD1306_WIDTH + 1)*(SSD1306_NUM_PAGES + 1))];
+uint8_t buf[((SSD1306_WIDTH)*(SSD1306_NUM_PAGES))];
 
 bool SSD1306_send_cmd(uint8_t cmd) {
     uint8_t buf[2] = {0x00, cmd};  // Control byte 0x00 for commands
@@ -173,6 +171,14 @@ void SSD1306_init() {
   };
 
   SSD1306_send_cmd_list(cmds, count_of(cmds));
+}
+
+void
+SSD1306_disable(void)
+{
+  uint8_t cmd = SSD1306_SET_DISP & ~0x01; // turn display off
+
+  SSD1306_send_cmd(cmd);
 }
 
 void SSD1306_scroll(bool on) {
