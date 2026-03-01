@@ -17,6 +17,7 @@
 #include "sched.h"
 #include "proto.h"
 #include "shared_mem.h"
+#include "gpio_irq.c"
 
 #define POLL_TIME_S 10
 
@@ -140,7 +141,8 @@ static TCP_CLIENT_T* tcp_client_init(void) {
   return state;
 }
 
-void __main(void) {
+void
+__main(void) {
   TCP_CLIENT_T *state = tcp_client_init();
   if (!state) {
     return;
@@ -157,7 +159,9 @@ void __main(void) {
   free(state);
 }
 
-void __attribute__((__noreturn__))main() {
+void __attribute__((__noreturn__))
+main()
+{
   stdio_init_all();
 
   if (cyw43_arch_init()) {
@@ -178,7 +182,11 @@ void __attribute__((__noreturn__))main() {
   printf("Welcome in waterer software!\n");
   printf("Running at %08X\n", (uint32_t)CUR_SLOT_ORIGIN);
   printf("Running slot  in flash: %02X\n", get_running_slot_id());
+  printf("Running firmware ver: %02X.%02X.%02X\n",
+         PROJECT_VERSION_MAJOR, PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH);
   printf("Connecting to %s Wi-Fi...\n", WIFI_SSID);
+
+  init_gpio();
 
   __main();
 
