@@ -26,7 +26,11 @@ function(create_slot_target slot_name flash_offset)
   target_link_libraries(${target_name}
     pico_cyw43_arch_lwip_threadsafe_background
     pico_stdlib
+    hardware_sleep
     hardware_i2c
+    hardware_clocks
+    hardware_rosc
+    hardware_irq
   )
 
   # Create linker script with correct origin
