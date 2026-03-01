@@ -9,10 +9,12 @@
 #define HEADER_LEN                      sizeof(header_t)
 
 // Packet headers
-#define RESET_PICO_CMD                  0xE0
+#define READ_SW_VERSION_CMD             0xA0
 
 #define READ_RUNNING_SLOT_CMD           0xB0
 #define SET_ACTIVE_SLOT_CMD             0xB1
+
+#define RESET_PICO_CMD                  0xE0
 
 #define FLASH_WRITE_CMD                 0xF0
 #define FLASH_ERASE_CMD                 0xF1
@@ -49,6 +51,12 @@ typedef struct read_running_slot  {
   uint8_t slot_id;
 } read_running_slot_resp_t;
 
+typedef struct read_sw_version  {
+  uint8_t major;
+  uint8_t minor;
+  uint8_t patch;
+} read_sw_version_resp_t;
+
 typedef struct set_active_slot  {
   uint8_t slot_id;
 } set_active_slot_t;
@@ -59,6 +67,7 @@ typedef union packet_data {
   erase_flash_data_t flash_erase;
   read_running_slot_resp_t read_running_slot;
   set_active_slot_t set_active_slot;
+  read_sw_version_resp_t read_sw_version;
 } packet_data_t;
 
 typedef struct packet {

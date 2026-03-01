@@ -17,9 +17,13 @@ extern struct tcp_pcb *main_tcp;
 uint8_t tx_buf[sizeof(packet_t)];
 
 handle_packet dispatch_table[256] = {
+  [READ_SW_VERSION_CMD] = read_sw_version_handle,
   [READ_RUNNING_SLOT_CMD] = get_running_slot_handle,
+
   [SET_ACTIVE_SLOT_CMD] = set_active_slot_handle,
+
   [RESET_PICO_CMD] = reset_handle,
+
   [FLASH_WRITE_CMD] = flash_write,
   [FLASH_ERASE_CMD] = flash_erase,
 };
@@ -231,6 +235,24 @@ reset_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len)
   }
 
   reset_pico();
+
+  return ACK_OK;
+}
+
+uint8_t
+read_sw_version_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len)
+{
+  if ( in_packet->header.length != 0 ) {
+    return ACK_LEN_ERR;
+  }
+
+  read_sw_version_resp_t *resp = &(out_packet->data.read_sw_version);
+
+  resp->major = PROJECT_VERSION_MAJOR;
+  resp->minor = PROJECT_VERSION_MINOR;
+  resp->patch = PROJECT_VERSION_PATCH;
+
+  *out_len = 3;
 
   return ACK_OK;
 }
