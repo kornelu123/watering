@@ -1,5 +1,7 @@
 #include <string.h>
 
+#include "pico/time.h"
+
 #include "hardware/flash.h"
 #include "hardware/sync.h"
 #include "shared_mem.h"
@@ -17,22 +19,27 @@ extern struct tcp_pcb *main_tcp;
 uint8_t tx_buf[sizeof(packet_t)];
 
 handle_packet dispatch_table[256] = {
-  [READ_SW_VERSION_CMD] = read_sw_version_handle,
-  [READ_RUNNING_SLOT_CMD] = get_running_slot_handle,
+  [GET_WATERING_CTX_CMD]    = get_watering_ctx,
 
-  [SET_ACTIVE_SLOT_CMD] = set_active_slot_handle,
+  [READ_SW_VERSION_CMD]     = read_sw_version_handle,
+  [READ_RUNNING_SLOT_CMD]   = get_running_slot_handle,
 
-  [RESET_PICO_CMD] = reset_handle,
+  [SET_ACTIVE_SLOT_CMD]     = set_active_slot_handle,
 
-  [FLASH_WRITE_CMD] = flash_write,
-  [FLASH_ERASE_CMD] = flash_erase,
+  [RESET_PICO_CMD]          = reset_handle,
+
+  [SET_NAME_CMD]            = set_name_handle,
+  [GET_NAME_CMD]            = get_name_handle,
+
+  [FLASH_WRITE_CMD]         = flash_write,
+  [FLASH_ERASE_CMD]         = flash_erase,
 };
 
 static inline int
 set_running_slot(uint8_t slot_id)
 {
   shared_mem_t cpy;
-  memcpy(&cpy, _shared, sizeof(shared_mem_t));
+  memcpy(&cpy, &shared, sizeof(shared_mem_t));
 
   if (slot_id > 1) {
     return -1;
@@ -40,12 +47,12 @@ set_running_slot(uint8_t slot_id)
 
   uint32_t ints = save_and_disable_interrupts();
 
-  flash_range_erase((uint32_t)_shared, FLASH_PAGE_SIZE);
+  flash_range_erase((uint32_t)&shared, FLASH_PAGE_SIZE);
 
   cpy.running_slot_id = slot_id;
-  memcpy(_shared, &cpy, sizeof(shared_mem_t));
+  memcpy(&shared, &cpy, sizeof(shared_mem_t));
 
-  flash_range_program((uint32_t) _shared, (const uint8_t *)&cpy, FLASH_PAGE_SIZE);
+  flash_range_program((uint32_t) &shared, (const uint8_t *)&cpy, FLASH_PAGE_SIZE);
 
   restore_interrupts(ints);
 
@@ -254,5 +261,54 @@ read_sw_version_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_
 
   *out_len = 3;
 
+  return ACK_OK;
+}
+
+uint8_t
+set_name_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len)
+{
+  shared_mem_t cpy;
+  memcpy(&cpy, &shared, sizeof(shared_mem_t));
+
+  if (in_packet->header.length > MAX_NAME_LEN) {
+    return -1;
+  }
+
+  strncpy(cpy.name, in_packet->data.set_name.name, MAX_NAME_LEN);
+
+  uint32_t ints = save_and_disable_interrupts();
+
+  flash_range_erase((uint32_t) &shared, FLASH_PAGE_SIZE);
+  flash_range_program((uint32_t) &shared, (const uint8_t *)&cpy, FLASH_PAGE_SIZE);
+
+  restore_interrupts(ints);
+  
+  return ACK_OK;
+}
+
+uint8_t
+get_name_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len)
+{
+  char *last = strncpy(out_packet->data.get_name.name, shared.name, MAX_NAME_LEN);
+
+  if (last == NULL) {
+    return -1;
+  }
+  
+  uint16_t len = (uint16_t)((uint32_t)last - (uint32_t)&(shared.name));
+
+  *out_len = len;
+  
+  return ACK_OK;
+}
+
+uint8_t
+get_watering_ctx(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len)
+{
+  out_packet->data.get_ctx.water_lvl = 0xA5;
+  out_packet->data.get_ctx.battery_lvl = 0xA5;
+  out_packet->data.get_ctx.moisture_lvl = 0xDEAD;
+  out_packet->data.get_ctx.uptime = to_ms_since_boot(get_absolute_time());
+  
   return ACK_OK;
 }

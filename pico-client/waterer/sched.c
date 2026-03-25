@@ -49,7 +49,6 @@ static void sched_go_sleep_until(absolute_time_t deadline)
   if (alarm_num >= 0) {
     hardware_alarm_set_target(alarm_num, deadline);
 
-    printf("WFI\n");
     __wfe();
 
     hardware_alarm_unclaim(alarm_num);

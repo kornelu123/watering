@@ -3,6 +3,7 @@ project(bootloader C CXX ASM)
 add_executable(${PROJECT_NAME}
   main.c
   syscalls.c
+  ../common/shared_mem.c
 )
 
 pico_set_linker_script(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/bootloader/bootloader.ld)
@@ -23,7 +24,7 @@ pico_minimize_runtime(${PROJECT_NAME} EXCLUDE ALL)
 
 pico_add_extra_outputs(${PROJECT_NAME})
 
-set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-Wall")
+set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-Wall -Wextra")
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
   CUR_SLOT_ORIGIN=${BOOTLOADER_ORIGIN}

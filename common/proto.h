@@ -8,11 +8,18 @@
 #define BUF_LEN                         sizeof(packet_t)
 #define HEADER_LEN                      sizeof(header_t)
 
+#define MAX_NAME_LEN                    0x20
+
 // Packet headers
+#define GET_WATERING_CTX_CMD            0x90
+
 #define READ_SW_VERSION_CMD             0xA0
 
 #define READ_RUNNING_SLOT_CMD           0xB0
 #define SET_ACTIVE_SLOT_CMD             0xB1
+
+#define SET_NAME_CMD                    0xD0
+#define GET_NAME_CMD                    0xD1
 
 #define RESET_PICO_CMD                  0xE0
 
@@ -61,13 +68,31 @@ typedef struct set_active_slot  {
   uint8_t slot_id;
 } set_active_slot_t;
 
+typedef struct set_name {
+  uint8_t name[MAX_NAME_LEN];
+} set_name_t;
+
+typedef struct get_name {
+  uint8_t name[MAX_NAME_LEN];
+} get_name_resp_t;
+
+typedef struct get_watering_ctx {
+  uint8_t   water_lvl;
+  uint8_t   battery_lvl;
+  uint16_t  moisture_lvl;
+  uint32_t  uptime;
+} get_watering_ctx_t;
+
 typedef union packet_data {
-  uint8_t buf[MAX_DATA_LEN];
-  write_flash_data_t flash_write;
-  erase_flash_data_t flash_erase;
-  read_running_slot_resp_t read_running_slot;
-  set_active_slot_t set_active_slot;
-  read_sw_version_resp_t read_sw_version;
+  uint8_t                   buf[MAX_DATA_LEN];
+  write_flash_data_t        flash_write;
+  erase_flash_data_t        flash_erase;
+  read_running_slot_resp_t  read_running_slot;
+  set_active_slot_t         set_active_slot;
+  read_sw_version_resp_t    read_sw_version;
+  set_name_t                set_name;
+  get_name_resp_t           get_name;
+  get_watering_ctx_t        get_ctx;
 } packet_data_t;
 
 typedef struct packet {

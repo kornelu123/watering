@@ -1,5 +1,7 @@
 #pragma once
 
+#include <time.h>
+
 #include "proto.h"
 
 typedef uint8_t (*handle_packet)(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len);
@@ -11,6 +13,8 @@ void send_error_response(uint8_t ack, uint16_t msg_id);
 void send_ok_response(uint8_t ack, uint16_t msg_id, uint16_t length);
 
 // TCP commands
+uint8_t get_watering_ctx(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len);
+
 uint8_t flash_write(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len);
 uint8_t flash_erase(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len);
 
@@ -20,5 +24,8 @@ uint8_t get_running_slot_handle(packet_t *in_packet, packet_t *out_packet, uint1
 uint8_t set_active_slot_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len);
 
 uint8_t read_sw_version_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len);
+
+uint8_t set_name_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len);
+uint8_t get_name_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len);
 
 extern handle_packet dispatch_table[256];

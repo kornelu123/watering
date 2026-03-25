@@ -35,9 +35,9 @@ SECTIONS
        launches only, to perform proper flash setup.
     */
 
-    .shared 0x1001F800:
+    .shared 0x1001F800 (NOLOAD):
     {
-      _shared = .;
+      _shared_start = .;
     }
 
     .text : {

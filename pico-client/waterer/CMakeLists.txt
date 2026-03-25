@@ -10,6 +10,7 @@ function(create_slot_target slot_name flash_offset)
     main.c
     dispatcher.c
     sched.c
+    ../common/shared_mem.c
     ${CMAKE_SOURCE_DIR}/common/crc.c
     ${CMAKE_SOURCE_DIR}/../common/helpers.c
   )

@@ -1,7 +1,13 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "pico/unique_id.h"
+
 #include "ssd1306.c"
+
+#define UPDATE_COUNT 5
+
+#define SCREEN_DELTA_MS 1000
 
 const char *pico_name;
 

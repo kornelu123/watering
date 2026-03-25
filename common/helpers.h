@@ -1,6 +1,8 @@
 #pragma once
 
+#ifndef FLASH_PAGE_SIZE
 #define FLASH_PAGE_SIZE 4096
+#endif
 
 #include <stdint.h>
 

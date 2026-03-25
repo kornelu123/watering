@@ -18,7 +18,7 @@ typedef struct task_ctx {
   absolute_time_t deadline;
   uint32_t timeout_ms;
 
-  char name[16];
+  char *name;
 
   task_fn realise;
   task_init_fn init;
