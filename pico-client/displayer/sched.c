@@ -6,32 +6,26 @@
 #include "sched.h"
 
 #include "hardware/timer.h"
-#include "hardware/irq.h" 
+#include "hardware/irq.h"
 #include "pico/sync.h"
 
-#include "uart_task.c"
 #include "disp_task.c"
 #include "wd_task.c"
-#include "waterer_task.c"
 
 #define MIN_SCHED_TIMEOUT_MS 10000
 
 task_ctx_t *tasks;
-
 static uint32_t task_count = 0;
 volatile bool should_wake_up = false;
 
-  static void
-alarm_sleep_callback(uint alarm_id)
-{
+static void alarm_sleep_callback(uint alarm_id) {
   hardware_alarm_set_callback(alarm_id, NULL);
   hardware_alarm_unclaim(alarm_id);
 
   should_wake_up = true;
 }
 
-static void sched_go_sleep_until(absolute_time_t deadline)
-{
+static void sched_go_sleep_until(absolute_time_t deadline) {
   absolute_time_t now = get_absolute_time();
   if (deadline <= now) {
     return;
@@ -42,7 +36,6 @@ static void sched_go_sleep_until(absolute_time_t deadline)
     hardware_alarm_set_target(alarm_num, deadline);
 
     __wfe();
-
     hardware_alarm_unclaim(alarm_num);
   } else {
     while (get_absolute_time() < deadline) {
@@ -51,14 +44,11 @@ static void sched_go_sleep_until(absolute_time_t deadline)
   }
 }
 
-uint32_t
-get_task_count(void) {
+uint32_t get_task_count(void) {
   return task_count;
 }
 
-  static inline task_ctx_t
-init_task(const uint32_t timeout_ms, const char *name, task_fn task_function, task_init_fn init_function, uint8_t index)
-{
+static inline task_ctx_t init_task(const uint32_t timeout_ms, const char *name, task_fn task_function, task_init_fn init_function, uint8_t index) {
   task_ctx_t task;
 
   task.timeout_ms = timeout_ms;
@@ -71,27 +61,17 @@ init_task(const uint32_t timeout_ms, const char *name, task_fn task_function, ta
   return task;
 }
 
-  int
-init_tasks(void)
-{
-  task_ctx_t uart_task_ctx = init_task(1000, "Uart task", &uart_task, NULL, UART_TASK_INDEX);
-  add_task(&uart_task_ctx);
-
+int init_tasks(void) {
   task_ctx_t disp_task_ctx = init_task(500, "Display task", &disp_task, &disp_init, DISP_TASK_INDEX);
   add_task(&disp_task_ctx);
 
   task_ctx_t wd_task_ctx = init_task(4000, "Watchdog task", &wd_task, &wd_init, WD_TASK_INDEX);
   add_task(&wd_task_ctx);
 
-  task_ctx_t waterer_task_ctx = init_task(3000, "Waterer task", &waterer_task, &waterer_init, WATERER_TASK_INDEX);
-  add_task(&waterer_task_ctx);
-
   return 0;
 }
 
-  int
-add_task(task_ctx_t *task)
-{
+int add_task(task_ctx_t *task) {
   task_count += 1;
 
   tasks = (task_ctx_t *)reallocarray(tasks, task_count, sizeof(task_ctx_t));
@@ -105,9 +85,7 @@ add_task(task_ctx_t *task)
   return 0;
 }
 
-  static void
-init_irq(void)
-{
+static void init_irq(void) {
   const uint32_t mask = 0x00000000 | (
           (1 << 11) |               // DMA_IRQ_0    enabled
           (1 << 12) |               // DMA_IRQ_1    enabled
@@ -119,9 +97,7 @@ init_irq(void)
   irq_set_mask_enabled(mask, true);
 }
 
-  void
-__run_sched(void)
-{
+void __run_sched(void) {
   init_irq();
   init_tasks();
 

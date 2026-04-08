@@ -6,15 +6,13 @@
 #include "hardware/sync.h"
 #include "shared_mem.h"
 
-#include "lwip/tcp.h"
-
 #include "dispatcher.h"
 
 #include "reset.h"
 
 #define SLOT_SIZE (SLOT1_ORIGIN - SLOT0_ORIGIN)
 
-extern struct tcp_pcb *main_tcp;
+static struct tcp_pcb *active_pcb = NULL;
 
 uint8_t tx_buf[sizeof(packet_t)];
 
@@ -59,9 +57,10 @@ set_running_slot(uint8_t slot_id)
   return 0;
 }
 
-void
-dispatch(packet_t *in_packet, uint16_t len)
+void dispatch(packet_t *in_packet, uint16_t len, struct tcp_pcb *tpcb)
 {
+  active_pcb = tpcb;
+
   const uint8_t cmd = in_packet->header.cmd_ack;
   const uint16_t msg_id = in_packet->header.msg_id;
 
@@ -90,7 +89,9 @@ dispatch(packet_t *in_packet, uint16_t len)
 void
 send_response(packet_t *packet)
 {
-  tcp_write(main_tcp, packet, (sizeof(header_t) + packet->header.length), TCP_WRITE_FLAG_MORE);
+  if (active_pcb != NULL) {
+      tcp_write(active_pcb, packet, (sizeof(header_t) + packet->header.length), TCP_WRITE_FLAG_MORE);
+  }
 }
 
 void
