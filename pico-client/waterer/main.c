@@ -25,7 +25,8 @@
   #error "PROJECT_VERSION cannot be read"
 #endif
 
-void __main(void) {
+void
+__main(void) {
   if (!tcp_client_init_and_connect(CLOUD_IP, &cloud_tcp)) {
       printf("Warning: No connection established, continuing offline.\n");
   }
@@ -37,7 +38,9 @@ void __main(void) {
   __run_sched();
 }
 
-void __attribute__((__noreturn__)) main() {
+void __attribute__((__noreturn__)) 
+main()
+{
   stdio_init_all();
 
   if (cyw43_arch_init()) {

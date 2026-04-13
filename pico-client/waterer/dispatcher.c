@@ -57,7 +57,8 @@ set_running_slot(uint8_t slot_id)
   return 0;
 }
 
-void dispatch(packet_t *in_packet, uint16_t len, struct tcp_pcb *tpcb)
+void
+dispatch(packet_t *in_packet, uint16_t len, struct tcp_pcb *tpcb)
 {
   active_pcb = tpcb;
 

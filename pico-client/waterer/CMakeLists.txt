@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.13)
 
 set(PICO_BOARD pico_w)
 
-# Initializes the Pico SDK if this is built as a standalone project.
 if (NOT TARGET pico_stdlib)
     pico_sdk_init()
 endif()
@@ -56,10 +55,8 @@ function(create_slot_target slot_name flash_offset)
     @ONLY
   )
 
-  # Use the custom linker script
   pico_set_linker_script(${target_name} "${linker_script}")
 
-  # Add extra outputs
   pico_add_extra_outputs(${target_name})
 
   # Rename output files
