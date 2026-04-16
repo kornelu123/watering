@@ -9,6 +9,7 @@
 #include "dispatcher.h"
 #include "proto.h"
 #include "shared_mem.h"
+#include "pico/time.h"
 
 #define POLL_TIME_S 10
 #define TCP_PORT 8080
@@ -77,6 +78,11 @@ static err_t tcp_client_poll(void *arg, struct tcp_pcb *tpcb) {
 }
 
 static void tcp_client_err(void *arg, err_t err) {
+  TCP_CLIENT_T *state = (TCP_CLIENT_T*)arg;
+  if (state) {
+    state->tcp_pcb = NULL; 
+    state->connected = false;
+  }
 }
 
 err_t tcp_client_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
@@ -142,12 +148,18 @@ bool tcp_client_init_and_connect(const char* ip_addr, struct tcp_pcb **out_ptr) 
     return false;
   }
 
-  // Prevents CPU starvation by waiting between failed attempts.
-  while(true) {
-    if (tcp_client_open(state)) {
-      break;
+  uint32_t last_try_time = 0;
+
+  while (!state->connected) {
+    if (state->tcp_pcb == NULL) {
+      uint32_t current_time = time_us_32();
+
+      if (current_time - last_try_time > 100000) {
+            tcp_client_open(state);
+            last_try_time = time_us_32();
+        }
     }
-    sleep_ms(2000);
+    __wfe(); 
   }
 
   return true;
