@@ -27,7 +27,9 @@ struct pico_ctx {
   uint8_t active_slot_id;
 
   uint16_t last_msg_id;
-  uint32_t pico_id;
+  uint64_t pico_id;
+
+  uint8_t pico_name[MAX_NAME_LEN];
 
   bool action_completed;
   time_t status_deadline;
@@ -35,6 +37,11 @@ struct pico_ctx {
 
   pthread_mutex_t pico_mut;
   packet_t out_buf;
+
+  get_watering_ctx_t watering_ctx;
+
+  uint8_t recv_buf[MAX_DATA_LEN];
+  size_t  recv_len;
 
   int (*packet_callback)(packet_t *in_packet, pico_ctx_t *ctx);
 };

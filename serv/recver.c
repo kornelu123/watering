@@ -1,14 +1,20 @@
 #include <pthread.h>
+#include <stdio.h>
 
+#include "cloud.h"
 #include "serv.h"
 #include "recver.h"
 #include "logger.h"
 
 handle_packet dispatch_table[256] = {
   [READ_RUNNING_SLOT_CMD]   = get_running_slot_handle,
+
   [SET_ACTIVE_SLOT_CMD]     = generic_zerolen_resp,
   [FLASH_WRITE_CMD]         = generic_zerolen_resp,
   [FLASH_ERASE_CMD]         = generic_zerolen_resp,
+
+  [GET_WATERING_CTX_CMD]    = get_watering_ctx_handle,
+  [GET_INFO_CMD]            = get_info_handle,
 };
 
   void
@@ -28,7 +34,8 @@ dispatch(packet_t *packet, int client_fd, uint32_t size)
   }
 
   if (pico_ctxs[i].last_msg_id != packet->header.msg_id) {
-    log_warn("Got unexpected message id\n");
+    log_warn("Got unexpected message id:%d, expected: %d\n", 
+        packet->header.msg_id, pico_ctxs[i].last_msg_id);
     return;
   }
 
@@ -57,7 +64,7 @@ dispatch(packet_t *packet, int client_fd, uint32_t size)
   }
 
   if (pico_ctxs[i].packet_callback == NULL) {
-    log_info("Packet callback is none");
+    log_info("Packet callback is none\n");
     return;
   }
 
@@ -65,6 +72,47 @@ dispatch(packet_t *packet, int client_fd, uint32_t size)
     log_err("Error during callback of message\n");
     return;
   }
+}
+
+static void
+parse_packet(intern_packet_t *pack)
+{
+  dispatch(&pack->pack, pack->fd, pack->size);
+}
+
+void *
+recv_main(void *args)
+{
+  intern_packet_t *buf_pack;
+  intern_packet_t cur_pack;
+
+  while (0xDEADBEEF)
+  {
+    pthread_mutex_lock(&packet_buf_mutex);
+    while((buf_pack = packet_ringbuf_pop()) == NULL) {          // To be sure we don't get the spurious wakeup
+      pthread_cond_wait(&packet_buf_cond, &packet_buf_mutex);
+    }
+    memcpy(&cur_pack, buf_pack, sizeof(packet_t));
+
+    pthread_mutex_unlock(&packet_buf_mutex);
+
+    parse_packet(&cur_pack);
+  }
+}
+
+  int
+get_watering_ctx_handle(packet_t *in_packet, pico_ctx_t *pico_ctx) 
+{
+  if (in_packet->header.length != sizeof(get_watering_ctx_t)) {
+    log_warn("Length is not the length of valid response\n");
+    return -1;
+  }
+
+  const get_watering_ctx_t *resp = &(in_packet->data.get_ctx);
+
+  memcpy(&(pico_ctx->watering_ctx), resp, sizeof(get_watering_ctx_t));
+
+  return 0;
 }
 
   int
@@ -94,28 +142,17 @@ generic_zerolen_resp(packet_t *in_packet, pico_ctx_t *pico_ctx)
   return 0;
 }
 
-static void
-parse_packet(intern_packet_t *pack)
+  int
+get_info_handle(packet_t *in_packet, pico_ctx_t *pico_ctx)
 {
-  dispatch(&pack->pack, pack->fd, pack->size);
-}
+  log_info("Inn get info handle\n");
+  get_info_t *info_pack = &(in_packet->data.get_info);
 
-void *
-recv_main(void *args)
-{
-  intern_packet_t *buf_pack;
-  intern_packet_t cur_pack;
+  pico_ctx->pico_id = ((uint64_t *)&info_pack->uuid)[0];
+  strncpy(pico_ctx->pico_name, info_pack->name, MAX_NAME_LEN);
 
-  while (0xDEADBEEF)
-  {
-    pthread_mutex_lock(&packet_buf_mutex);
-    while((buf_pack = packet_ringbuf_pop()) == NULL) {          // To be sure we don't get the spurious wakeup
-      pthread_cond_wait(&packet_buf_cond, &packet_buf_mutex);
-    }
-    memcpy(&cur_pack, buf_pack, sizeof(packet_t));
+  log_info("Got %s name from ID:%16X\n", 
+      pico_ctx->pico_name, pico_ctx->pico_id);
 
-    pthread_mutex_unlock(&packet_buf_mutex);
-
-    parse_packet(&cur_pack);
-  }
+  return 0;
 }

@@ -95,18 +95,22 @@ create_set_name_packet(const uint8_t *name, const uint16_t msg_id, pico_ctx_t *p
   out_buf->header.cmd_ack = SET_NAME_CMD;
   out_buf->header.msg_id = msg_id;
 
-  uint32_t len = 
-    ((uint32_t)strncpy(out_buf->data.set_name.name, name, MAX_NAME_LEN) - (uint32_t) name);
+  strncpy(out_buf->data.set_name.name, name, MAX_NAME_LEN);
+
+  int len = strlen(name);
+  if (len > MAX_NAME_LEN) {
+    len = MAX_NAME_LEN;
+  }
 
   out_buf->header.length = 1 + len;
 }
 
   void
-create_get_name_packet(const uint16_t msg_id, pico_ctx_t *pico_ctx)
+create_get_info_packet(const uint16_t msg_id, pico_ctx_t *pico_ctx)
 {
   packet_t *out_buf = &(pico_ctx->out_buf);
 
-  out_buf->header.cmd_ack = GET_NAME_CMD;
+  out_buf->header.cmd_ack = GET_INFO_CMD;
   out_buf->header.msg_id = msg_id;
   out_buf->header.length = 1;
 }
