@@ -34,6 +34,7 @@
 #define ACK_LEN_ERR                     0xFD
 
 #define ACK_OK                          0x00
+#define MAX_PUMPS 8
 
 #include <stdint.h>
 
@@ -79,7 +80,8 @@ typedef struct get_name {
 typedef struct get_watering_ctx {
   uint8_t   water_lvl;
   uint8_t   battery_lvl;
-  uint16_t  moisture_lvl;
+  uint8_t   active_pumps_mask;
+  uint16_t  moisture_lvl[MAX_PUMPS];
   uint32_t  uptime;
 } get_watering_ctx_t;
 

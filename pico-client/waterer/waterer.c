@@ -4,15 +4,25 @@
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "hardware/gpio.h"
+#include "hardware/adc.h"
 #include "pico/cyw43_arch.h"
 #include "lwip/pbuf.h"
 #include "lwip/udp.h"
 #include "lwip/ip_addr.h"
 
+#define SLEEP_TIME 1800000
+
 #define SLEEP_TIME 1800000 // 30min
+
+static uint8_t active_pumps_mask = 0xFF;
 
 void w_init(void) {
     stdio_init_all();
+    // ADC
+    adc_init();
+    adc_gpio_init(ADC0); 
+    adc_gpio_init(ADC1);
+
 
     // SPI
     spi_init(SPI_PORT, 1000 * 1000);
@@ -43,7 +53,6 @@ void w_init(void) {
     gpio_set_dir(PIN_CHG_STATUS, GPIO_IN);
 }
 
-// helper function
 static int _read_adc_raw(uint8_t channel) {
     uint8_t tx[3] = {
         0x01,
@@ -70,8 +79,20 @@ uint16_t w_read_moisture(uint8_t channel_id) {
     return (uint16_t)(sum / samples);
 }
 
-bool w_is_battery_charging(void) {
-    return gpio_get(PIN_CHG_STATUS); // Assuming charger is not open-drain
+uint16_t w_read_battery(void) {
+    adc_select_input(0);
+    uint16_t raw_val = adc_read();
+    return (uint8_t)((raw_val * 100) / 4095);
+}
+
+uint16_t w_read_water_level(void) {
+    adc_select_input(1);
+    uint16_t raw_val = adc_read();
+    return (uint8_t)((raw_val * 100) / 4095);
+}
+
+uint8_t w_get_active_pumps_mask(void) {
+    return active_pumps_mask;
 }
 
 void w_pump_on(uint8_t channel_id) {

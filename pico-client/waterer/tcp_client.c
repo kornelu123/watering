@@ -10,6 +10,7 @@
 #include "proto.h"
 #include "shared_mem.h"
 #include "pico/time.h"
+#include "pico/sync.h"
 
 #define POLL_TIME_S 10
 #define TCP_PORT 8080

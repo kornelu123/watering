@@ -1,6 +1,8 @@
-#include "waterer.h"
 #include <stdio.h>
 #include <string.h>
+#include "proto.h"
+#include "tcp_client.h"
+#include "waterer.h"
 
 #include "lwip/tcp.h"
 #include "pico/cyw43_arch.h"
@@ -25,45 +27,44 @@ static uint8_t pumps_count = 0;
 static uint8_t current_pump_index = 0;
 uint16_t current_moisture[MAX_PUMPS];
 
+uint8_t cached_battery_lvl = 0;
+uint8_t cached_water_lvl = 0;
+
 int waterer_init(void) {
     w_init();
     return 3000; 
 }
 
-// helper function
-// Currently sends data as plain-text, not included in ~/common/proto.h
-static void send_data(bool is_charging){
-    char message[256];
-    int offset = 0;
+void w_get_watering_stats(get_watering_ctx_t *ctx) {
+    if (ctx == NULL) return;
 
-    offset += snprintf(message + offset, sizeof(message) - offset, "BAT_CHG:%d|", is_charging);
-    for (uint8_t i = 0; i < MAX_PUMPS; i++) {
-        offset += snprintf(message + offset, sizeof(message) - offset, "CH%d:%d|", i, current_moisture[i]);
-    }
+    ctx->battery_lvl = cached_battery_lvl;
+    ctx->water_lvl = cached_water_lvl;
+    ctx->active_pumps_mask = w_get_active_pumps_mask();
+    ctx->uptime = to_ms_since_boot(get_absolute_time()) / 1000;
 
-    // Send data to cloud
-    if (cloud_tcp != NULL) {
-        cyw43_arch_lwip_begin();
-
-        err_t err1 = tcp_write(cloud_tcp, message, strlen(message), TCP_WRITE_FLAG_COPY);
-
-        if (err1 == ERR_OK){
-            tcp_output(cloud_tcp);
+    for (int i = 0; i < MAX_PUMPS; i++) {
+        if (ctx->active_pumps_mask & (1 << i)) {
+            ctx->moisture_lvl[i] = current_moisture[i];
+        } else {
+            ctx->moisture_lvl[i] = 0;
         }
-        cyw43_arch_lwip_end(); 
     }
-    // Send data to displayer
-    if (display_tcp != NULL) {
-        cyw43_arch_lwip_begin();
+}
 
-        err_t err2 = tcp_write(display_tcp, message, strlen(message), TCP_WRITE_FLAG_COPY);
-
-        if(err2 == ERR_OK){
-            tcp_output(display_tcp);
-        }
-        cyw43_arch_lwip_end(); 
+static void send_data(struct tcp_pcb *pcb){
+    if (pcb == NULL){
+        return;
     }
 
+    packet_t tx_packet = {0};
+    tx_packet.header.cmd_ack = GET_WATERING_CTX_CMD;
+    tx_packet.header.length = sizeof(get_watering_ctx_t);
+    
+    w_get_watering_stats(&tx_packet.data.get_ctx);
+
+    tcp_write(pcb, &tx_packet, sizeof(header_t) + tx_packet.header.length, TCP_WRITE_FLAG_COPY);
+    tcp_output(pcb);
 }
 
 int waterer_task(void) {
@@ -72,18 +73,24 @@ int waterer_task(void) {
             pumps_count = 0;
             current_pump_index = 0;
             
-            bool is_charging = w_is_battery_charging();
+            cached_battery_lvl = w_read_battery();
+            cached_water_lvl = w_read_water_level();
+            uint8_t active_mask = w_get_active_pumps_mask();
             
             for (uint8_t i = 0; i < MAX_PUMPS; i++) {
-                current_moisture[i] = w_read_moisture(i);
+                if (active_mask & (1 << i)) {
+                    current_moisture[i] = w_read_moisture(i);
 
-                if (current_moisture[i] < MOISTURE_THRESHOLD) {
-                    pumps_to_water[pumps_count] = i;
-                    pumps_count++;
+                    if (current_moisture[i] < MOISTURE_THRESHOLD) {
+                        pumps_to_water[pumps_count] = i;
+                        pumps_count++;
+                    }
+                } else {
+                    current_moisture[i] = 0;
                 }
             }
 
-            send_data(is_charging);
+            send_data(cloud_tcp);
 
             if (pumps_count > 0) {
                 current_state = STATE_WATERING_PUMP;

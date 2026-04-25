@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 3.13)
 set(PICO_BOARD pico_w)
 
 if (NOT TARGET pico_stdlib)
-    pico_sdk_init()
+  include(pico_sdk_import.cmake)
+  project(watering LANGUAGES C CXX ASM VERSION 0.0.1)
 endif()
 
 function(create_slot_target slot_name flash_offset)
@@ -43,6 +44,7 @@ function(create_slot_target slot_name flash_offset)
     hardware_clocks
     hardware_irq
     hardware_spi
+    hardware_adc
     hardware_watchdog
   )
 

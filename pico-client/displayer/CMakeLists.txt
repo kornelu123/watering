@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.13)
 set(PICO_BOARD pico_w)
 
 if (NOT TARGET pico_stdlib)
+    include(pico_sdk_import.cmake)
+    project(watering LANGUAGES C CXX ASM VERSION 0.0.1)
     pico_sdk_init()
 endif()
 

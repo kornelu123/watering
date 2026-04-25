@@ -7,12 +7,13 @@
 #include "shared_mem.h"
 
 #include "dispatcher.h"
-
+#include "proto.h"
 #include "reset.h"
 
 #define SLOT_SIZE (SLOT1_ORIGIN - SLOT0_ORIGIN)
 
 static struct tcp_pcb *active_pcb = NULL;
+extern void w_get_watering_stats(get_watering_ctx_t *ctx);
 
 uint8_t tx_buf[sizeof(packet_t)];
 
@@ -307,10 +308,9 @@ get_name_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len)
 uint8_t
 get_watering_ctx(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len)
 {
-  out_packet->data.get_ctx.water_lvl = 0xA5;
-  out_packet->data.get_ctx.battery_lvl = 0xA5;
-  out_packet->data.get_ctx.moisture_lvl = 0xDEAD;
-  out_packet->data.get_ctx.uptime = to_ms_since_boot(get_absolute_time());
+  w_get_watering_stats(&out_packet->data.get_ctx);
+
+  *out_len = sizeof(get_watering_ctx_t);
   
   return ACK_OK;
 }

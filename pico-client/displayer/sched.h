@@ -7,6 +7,7 @@
 #define DISP_TASK_INDEX     1
 #define WD_TASK_INDEX       2
 #define WATERER_TASK_INDEX  3
+#define COMM_TASK_INDEX    4 
 
 #include "hardware/sync.h"
 #include "pico/time.h"

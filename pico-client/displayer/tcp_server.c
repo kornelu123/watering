@@ -4,41 +4,27 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "proto.h"
 
-volatile bool new_data = false;
-uint16_t current_moisture[MAX_PUMPS] = {0};
-bool is_charging = false;
+struct tcp_pcb *display_tcp = NULL;
+packet_t rx_packet = {0};
+volatile bool raw_packet_ready = false;
 
-// Callback: Receiving the data
+static void tcp_server_err(void *arg, err_t err) {
+    display_tcp = NULL;
+}
+
 static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
     if (p == NULL) {
         tcp_close(tpcb);
+        display_tcp = NULL;
         return ERR_OK;
     }
 
-    char buffer[256];
-    uint16_t len = (p->len < sizeof(buffer) - 1) ? p->len : sizeof(buffer) - 1;
-    memcpy(buffer, p->payload, len);
-    buffer[len] = '\0';
-
-    // Parsing the data
-
-    int chg_status;
-    if (sscanf(buffer, "BAT_CHG:%d|", &chg_status) == 1) {
-        is_charging = (chg_status != 0);
-    }
-
-    for (int i = 0; i < MAX_PUMPS; i++) {
-        char search_tag[10];
-        snprintf(search_tag, sizeof(search_tag), "CH%d:", i);
-        
-        char *ptr = strstr(buffer, search_tag);
-        if (ptr != NULL) {
-            current_moisture[i] = (uint16_t)atoi(ptr + strlen(search_tag));
-        }
-    }
-
-    new_data = true;
+    uint16_t len = (p->len < sizeof(packet_t)) ? p->len : sizeof(packet_t);
+    memcpy(&rx_packet, p->payload, len);
+    
+    raw_packet_ready = true;
 
     tcp_recved(tpcb, p->tot_len);
     pbuf_free(p);
@@ -46,8 +32,13 @@ static err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, er
     return ERR_OK;
 }
 
-// Callback: Connection attempt
 static err_t tcp_server_accept(void *arg, struct tcp_pcb *newpcb, err_t err) {
+    if (err != ERR_OK || newpcb == NULL) {
+        return ERR_VAL;
+    }
+
+    display_tcp = newpcb;
+    tcp_err(newpcb, tcp_server_err);
     tcp_recv(newpcb, tcp_server_recv);
     
     return ERR_OK;

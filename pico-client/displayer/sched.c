@@ -11,6 +11,7 @@
 
 #include "disp_task.c"
 #include "wd_task.c"
+#include "comm_task.c"
 
 #define MIN_SCHED_TIMEOUT_MS 10000
 
@@ -67,6 +68,9 @@ int init_tasks(void) {
 
   task_ctx_t wd_task_ctx = init_task(4000, "Watchdog task", &wd_task, &wd_init, WD_TASK_INDEX);
   add_task(&wd_task_ctx);
+
+  task_ctx_t comm_task_ctx = init_task(500, "Comm task", &comm_task, NULL, COMM_TASK_INDEX);
+  add_task(&comm_task_ctx);
 
   return 0;
 }
