@@ -38,6 +38,7 @@ add_executable(${PROJECT_NAME}
   recver.c
   controller.c
   creators.c
+  cloud.c
   ${CMAKE_SOURCE_DIR}/../common/helpers.c
 )
 
@@ -56,3 +57,6 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
   PROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
   PROJECT_VERSION_PATCH=${PROJECT_VERSION_PATCH}
 )
+
+find_package(CURL REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)

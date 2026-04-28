@@ -180,6 +180,7 @@ main()
   }
 
   printf("Welcome in waterer software!\n");
+  printf("My name is : %s\n", get_name());
   printf("Running at %08X\n", (uint32_t)CUR_SLOT_ORIGIN);
   printf("Running slot  in flash: %02X\n", get_running_slot_id());
   printf("Running firmware ver: %02X.%02X.%02X\n",

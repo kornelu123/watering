@@ -21,6 +21,9 @@ int create_get_running_slot_packet(const uint16_t msg_id, pico_ctx_t *pico_ctx);
 void create_set_active_slot_packet(const uint8_t slot_id, const uint16_t msg_id, pico_ctx_t *pico_ctx);
 
 void create_set_name_packet(const uint8_t *name, const uint16_t msg_id, pico_ctx_t *pico_ctx);
-void create_get_name_packet(const uint16_t msg_id, pico_ctx_t *pico_ctx);
+void create_get_info_packet(const uint16_t msg_id, pico_ctx_t *pico_ctx);
 
 void create_reset_packet(const uint16_t msg_id, pico_ctx_t *pico_ctx);
+
+void create_get_ctx_packet(const uint16_t msg_id, pico_ctx_t *pico_ctx);
+

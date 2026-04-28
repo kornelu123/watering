@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "pico/time.h"
+#include "pico/unique_id.h"
 
 #include "hardware/flash.h"
 #include "hardware/sync.h"
@@ -11,6 +12,7 @@
 #include "dispatcher.h"
 
 #include "reset.h"
+
 
 #define SLOT_SIZE (SLOT1_ORIGIN - SLOT0_ORIGIN)
 
@@ -29,7 +31,7 @@ handle_packet dispatch_table[256] = {
   [RESET_PICO_CMD]          = reset_handle,
 
   [SET_NAME_CMD]            = set_name_handle,
-  [GET_NAME_CMD]            = get_name_handle,
+  [GET_INFO_CMD]            = get_info_handle,
 
   [FLASH_WRITE_CMD]         = flash_write,
   [FLASH_ERASE_CMD]         = flash_erase,
@@ -65,8 +67,6 @@ dispatch(packet_t *in_packet, uint16_t len)
   const uint8_t cmd = in_packet->header.cmd_ack;
   const uint16_t msg_id = in_packet->header.msg_id;
 
-  fflush(stdout);
-
   if (dispatch_table[cmd] == NULL) {
     send_error_response(ACK_CMD_ERR, msg_id);
     return;
@@ -90,6 +90,11 @@ dispatch(packet_t *in_packet, uint16_t len)
 void
 send_response(packet_t *packet)
 {
+
+  uint8_t *data = (uint8_t *)packet;
+
+  printf("Sending packet of size :%u, header: %02X\n", sizeof(header_t) + packet->header.length, packet->header.cmd_ack);
+
   tcp_write(main_tcp, packet, (sizeof(header_t) + packet->header.length), TCP_WRITE_FLAG_MORE);
 }
 
@@ -287,18 +292,20 @@ set_name_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len)
 }
 
 uint8_t
-get_name_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len)
+get_info_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len)
 {
-  char *last = strncpy(out_packet->data.get_name.name, shared.name, MAX_NAME_LEN);
+  char *last = strncpy(out_packet->data.get_info.name, shared.name, MAX_NAME_LEN);
 
   if (last == NULL) {
     return -1;
   }
   
-  uint16_t len = (uint16_t)((uint32_t)last - (uint32_t)&(shared.name));
+  uint16_t len = strlen(out_packet->data.get_info.name);
 
-  *out_len = len;
+  pico_get_unique_board_id((pico_unique_board_id_t *) out_packet->data.get_info.uuid);
   
+  *out_len = len + 8;
+
   return ACK_OK;
 }
 
@@ -309,6 +316,8 @@ get_watering_ctx(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len)
   out_packet->data.get_ctx.battery_lvl = 0xA5;
   out_packet->data.get_ctx.moisture_lvl = 0xDEAD;
   out_packet->data.get_ctx.uptime = to_ms_since_boot(get_absolute_time());
+
+  *out_len = 8;
   
   return ACK_OK;
 }
