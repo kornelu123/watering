@@ -10,10 +10,6 @@
 #include "lwip/udp.h"
 #include "lwip/ip_addr.h"
 
-#define SLEEP_TIME 1800000 // 30min
-
-static uint8_t active_pumps_mask = 0xFF;
-
 void w_init(void) {
     stdio_init_all();
     // ADC
@@ -83,7 +79,7 @@ uint16_t w_read_water_level(void) {
 }
 
 uint8_t w_get_active_pumps_mask(void) {
-    return active_pumps_mask;
+    return ACTIVE_PUMPS_MASK;
 }
 
 void w_pump_enable_12v(void) {

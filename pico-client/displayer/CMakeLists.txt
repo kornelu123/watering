@@ -36,4 +36,10 @@ target_link_libraries(displayer
     hardware_irq
 )
 
+target_compile_definitions(${target_name} PUBLIC
+    WIFI_SSID="${WIFI_SSID}"
+    WIFI_PASS="${WIFI_PASS}"
+    DISPLAYER_IP="${DISPLAYER_IP}"
+)
+
 pico_add_extra_outputs(displayer)

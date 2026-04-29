@@ -23,11 +23,6 @@
 #define PIN_12V_ENABLE      10
 #define PIN_CHG_STATUS      11
 
-// Watering
-#define MOISTURE_THRESHOLD  512 //0-1023
-#define WATERING_TIME       2000
-
-
 #define MAX_PUMPS 8
 
 void w_init(void);

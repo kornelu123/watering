@@ -7,9 +7,9 @@
 #include "lwip/tcp.h"
 #include "pico/cyw43_arch.h"
 
-#define SLEEP_TIME_MS 1800000 // 30 min
 #define WATERING_TIME_MS 2000 // 2s
 #define PUMP_SWITCH_DELAY 500 // 0.5s
+#define MOISTURE_THRESHOLD  512 // 0-1023
 
 extern struct tcp_pcb *cloud_tcp;
 extern struct tcp_pcb *display_tcp;
@@ -158,11 +158,11 @@ int waterer_task(void) {
                 return PUMP_SWITCH_DELAY;
             } else {
                 current_state = STATE_READ_SENSORS;
-                return SLEEP_TIME_MS;
+                return sleep_time_ms;
             }
         }
     }
     // Fallback
     current_state = STATE_READ_SENSORS;
-    return SLEEP_TIME_MS;
+    return sleep_time_ms;
 }

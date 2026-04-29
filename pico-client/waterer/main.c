@@ -16,12 +16,9 @@
 #include "proto.h"
 #include "shared_mem.h"
 #include "gpio_irq.c"
-
 #include "tcp_client.h"
 #include "reset.h"
 
-#define CLOUD_IP "192.168.1.1"
-#define DISPLAYER_IP "192.168.4.1" 
 
 #if !defined(PROJECT_VERSION_MAJOR) || !defined(PROJECT_VERSION_MINOR)|| !defined(PROJECT_VERSION_PATCH)
   #error "PROJECT_VERSION cannot be read"
