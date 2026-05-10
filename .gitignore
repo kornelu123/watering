@@ -3,3 +3,7 @@ serv/build/
 pico-client/build
 .gdb_history
 pico-client/.gdb_history
+
+# Secrets & TLS certs
+app/certs/
+.env

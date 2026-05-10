@@ -3,11 +3,21 @@ services:
     build: .
     restart: unless-stopped
     environment:
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=rediss://:${REDIS_PASSWORD}@redis:6380/0
+    volumes:
+      - ./certs/ca.crt:/app/certs/ca.crt:ro
+    depends_on:
+      - redis
 
   redis:
     image: redis:alpine
     restart: unless-stopped
+    command: ["redis-server", "/etc/redis/redis.conf", "--requirepass", "${REDIS_PASSWORD}"]
+    ports:
+      - "6380:6380"
+    volumes:
+      - ./redis.conf:/etc/redis/redis.conf:ro
+      - ./certs:/etc/redis/certs:ro
 
   caddy:
     image: caddy:latest

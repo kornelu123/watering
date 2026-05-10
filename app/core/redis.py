@@ -1,4 +1,5 @@
 import logging
+import ssl
 from redis.asyncio import Redis, ConnectionPool
 from core.config import settings
 
@@ -10,9 +11,18 @@ class RedisManager:
         self.client = None
 
     async def connect(self):
-        self.pool = ConnectionPool.from_url(settings.REDIS_URL, decode_responses=True)
+        # Pełna weryfikacja certyfikatu za pomocą pliku CA
+        self.pool = ConnectionPool.from_url(
+            settings.REDIS_URL,
+            decode_responses=True,
+            ssl_cert_reqs="required",
+            ssl_ca_certs="/app/certs/ca.crt"
+        )
         self.client = Redis(connection_pool=self.pool)
-        logger.info("Zainicjowano pulę połączeń z Redis.")
+        
+        # Weryfikacja połączenia
+        await self.client.ping()
+        logger.info("Połączono z Redis (TLS + hasło) pomyślnie.")
 
     async def disconnect(self):
         if self.client:
