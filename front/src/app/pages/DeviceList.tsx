@@ -41,9 +41,15 @@ interface DeviceGroup {
   devices: DeviceAssignment[];
 }
 
+interface UserSettings {
+  battery_threshold_percent: number;
+  water_level_threshold_percent: number;
+}
+
 export default function DeviceList() {
   const [groups, setGroups] = useState<DeviceGroup[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
+  const [userSettings, setUserSettings] = useState<UserSettings>({ battery_threshold_percent: 20, water_level_threshold_percent: 10 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -65,14 +71,16 @@ export default function DeviceList() {
       try {
         setLoading(true);
         const headers = { Authorization: `Bearer ${token}` };
-        const [devicesRes, groupsRes] = await Promise.all([
+        const [devicesRes, groupsRes, settingsRes] = await Promise.all([
           fetch('/api/v1/devices', { headers }),
           fetch('/api/v1/groups', { headers }),
+          fetch('/api/v1/settings', { headers }),
         ]);
         if (!devicesRes.ok) throw new Error('Błąd pobierania urządzeń');
         if (!groupsRes.ok) throw new Error('Błąd pobierania grup');
         setDevices(await devicesRes.json());
         setGroups(await groupsRes.json());
+        if (settingsRes.ok) setUserSettings(await settingsRes.json());
       } catch (e: any) {
         setError(e.message);
       } finally {
@@ -271,7 +279,10 @@ export default function DeviceList() {
   };
 
   const onlineCount = devices.filter(d => getStatusLabel(d.last_seen) === 'Online').length;
-  const attentionCount = devices.filter(d => (d.battery_lvl ?? 100) < 30 || (d.moisture_lvl ?? 100) < 30).length;
+  const attentionCount = devices.filter(d =>
+    (d.battery_lvl ?? 100) < userSettings.battery_threshold_percent ||
+    (d.water_lvl ?? 100) < userSettings.water_level_threshold_percent
+  ).length;
 
   return (
     <div className="p-8">
