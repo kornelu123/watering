@@ -8,3 +8,9 @@ class DeviceModel(BaseModel):
 
 class WaterCommandRequest(BaseModel):
     duration_sec: Optional[int] = 10
+
+class WateringTimeCommandRequest(BaseModel):
+    duration_sec: int
+
+class WateringThresholdCommandRequest(BaseModel):
+    threshold_percent: int
