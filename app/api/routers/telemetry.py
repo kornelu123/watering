@@ -4,11 +4,13 @@ from schemas.telemetry import TelemetryCreate, TelemetryStatusResponse, Telemetr
 from services.telemetry_service import TelemetryService
 from api.dependencies import get_telemetry_service, verify_api_key
 from core.security import get_current_user_id
-from typing import List
+from typing import List, Annotated
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/telemetry", tags=["Telemetry"])
+
+
 
 
 @router.post("", response_model=TelemetryStatusResponse, status_code=status.HTTP_201_CREATED)
@@ -38,15 +40,11 @@ async def get_devices(
 @router_user.get("/telemetry/{device_id}", response_model=List[TelemetryPoint])
 async def get_telemetry_history(
     device_id: str,
-    range: str = Query(default="24h", pattern="^(24h|7d|30d)$"),
-    telemetry_service: TelemetryService = Depends(get_telemetry_service),
-    current_user_id: int = Depends(get_current_user_id)
-):
-    logger.info(f"Pobieranie historii telemetrii: urządzenie '{device_id}', zakres={range} (user {current_user_id})")
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    service: Annotated[TelemetryService, Depends(get_telemetry_service)],
+    range_key: str = Query(default="1d", pattern="^(1d|7d|30d)$"),
+) -> list[dict]:
     try:
-        data = await telemetry_service.get_telemetry_history(device_id, current_user_id, range)
-        logger.info(f"Zwrócono {len(data)} rekordów telemetrii dla urządzenia '{device_id}'")
-        return data
+        return await service.get_telemetry_history(device_id, user_id, range_key)
     except PermissionError:
-        logger.warning(f"Odmowa dostępu do telemetrii urządzenia '{device_id}' dla usera {current_user_id}")
-        raise HTTPException(status_code=403, detail="Brak dostępu do urządzenia")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Brak dostępu do urządzenia")

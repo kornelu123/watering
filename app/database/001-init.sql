@@ -52,19 +52,34 @@ CREATE INDEX ix_telemetry_device_id_time ON telemetry (device_id, time DESC);
 
 -- 4. Tworzenie Zmaterializowanych Widoków
 CREATE MATERIALIZED VIEW telemetry_15m WITH (timescaledb.continuous) AS
-SELECT time_bucket('15 minutes', time) AS bucket, device_id, 
-       AVG(moisture_lvl) as avg_moisture, MIN(moisture_lvl) as min_moisture, MAX(moisture_lvl) as max_moisture
-FROM telemetry GROUP BY bucket, device_id;
+SELECT
+    time_bucket('15 minutes', time) AS bucket,
+    device_id,
+    ROUND((AVG(moisture_lvl) / 65535.0) * 100, 2) AS avg_moisture,
+    ROUND((MIN(moisture_lvl) / 65535.0) * 100, 2) AS min_moisture,
+    ROUND((MAX(moisture_lvl) / 65535.0) * 100, 2) AS max_moisture
+FROM telemetry
+GROUP BY bucket, device_id;
 
 CREATE MATERIALIZED VIEW telemetry_1h WITH (timescaledb.continuous) AS
-SELECT time_bucket('1 hour', time) AS bucket, device_id, 
-       AVG(moisture_lvl) as avg_moisture, MIN(moisture_lvl) as min_moisture, MAX(moisture_lvl) as max_moisture
-FROM telemetry GROUP BY bucket, device_id;
+SELECT
+    time_bucket('1 hour', time) AS bucket,
+    device_id,
+    ROUND((AVG(moisture_lvl) / 65535.0) * 100, 2) AS avg_moisture,
+    ROUND((MIN(moisture_lvl) / 65535.0) * 100, 2) AS min_moisture,
+    ROUND((MAX(moisture_lvl) / 65535.0) * 100, 2) AS max_moisture
+FROM telemetry
+GROUP BY bucket, device_id;
 
 CREATE MATERIALIZED VIEW telemetry_1d WITH (timescaledb.continuous) AS
-SELECT time_bucket('1 day', time) AS bucket, device_id, 
-       AVG(moisture_lvl) as avg_moisture, MIN(moisture_lvl) as min_moisture, MAX(moisture_lvl) as max_moisture
-FROM telemetry GROUP BY bucket, device_id;
+SELECT
+    time_bucket('1 day', time) AS bucket,
+    device_id,
+    ROUND((AVG(moisture_lvl) / 65535.0) * 100, 2) AS avg_moisture,
+    ROUND((MIN(moisture_lvl) / 65535.0) * 100, 2) AS min_moisture,
+    ROUND((MAX(moisture_lvl) / 65535.0) * 100, 2) AS max_moisture
+FROM telemetry
+GROUP BY bucket, device_id;
 
 -- Widok 15-minutowy odświeża się co 15 minut
 SELECT add_continuous_aggregate_policy('telemetry_15m',

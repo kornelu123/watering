@@ -5,11 +5,28 @@ from schemas.telemetry import TelemetryCreate
 
 logger = logging.getLogger(__name__)
 
-RANGE_MAP = {
-    "24h": timedelta(hours=24),
+_RANGE_TO_VIEW: dict[str, str] = {
+    "24h":  "telemetry_15m",
+    "7d":  "telemetry_1h",
+    "30d": "telemetry_1d",
+}
+
+_RANGE_MAP: dict[str, timedelta] = {
+    "24h":  timedelta(days=1),
     "7d":  timedelta(days=7),
     "30d": timedelta(days=30),
 }
+
+_AGG_QUERY = """
+    SELECT
+        bucket,
+        avg_moisture,
+        min_moisture,
+        max_moisture
+    FROM {view}
+    WHERE device_id = $1 AND bucket >= $2
+    ORDER BY bucket ASC
+"""
 
 class TelemetryService:
     def __init__(self, db_session: asyncpg.Connection = None):
@@ -78,28 +95,31 @@ class TelemetryService:
         logger.info(f"Zwrócono {len(devices)} urządzeń dla usera {user_id}")
         return devices
 
-    async def get_telemetry_history(self, device_id: str, user_id: int, range_key: str) -> list[dict]:
-        """Returns time-series telemetry for one device, scoped to the authenticated user."""
-        logger.info(f"Pobieranie historii telemetrii: urządzenie '{device_id}', zakres={range_key} (user {user_id})")
-        delta = RANGE_MAP.get(range_key, timedelta(hours=24))
-        since = datetime.now(timezone.utc) - delta
+    async def get_telemetry_history(
+        self, device_id: str, user_id: int, range_key: str
+    ) -> list[dict]:
+        logger.info(
+            f"Pobieranie historii telemetrii: urządzenie '{device_id}', "
+            f"zakres={range_key} (user {user_id})"
+        )
 
         ownership = await self.db.fetchval(
             "SELECT 1 FROM devices WHERE device_id = $1 AND user_id = $2",
-            device_id, user_id
+            device_id, user_id,
         )
         if not ownership:
-            logger.warning(f"Odmowa dostępu do historii telemetrii urządzenia '{device_id}' dla usera {user_id}")
+            logger.warning(
+                f"Odmowa dostępu do historii telemetrii urządzenia '{device_id}' "
+                f"dla usera {user_id}"
+            )
             raise PermissionError("Brak dostępu do urządzenia")
 
-        query = """
-            SELECT time, moisture_lvl, battery_lvl, water_lvl
-            FROM telemetry
-            WHERE device_id = $1 AND time >= $2
-            ORDER BY time ASC
-        """
-        rows = await self.db.fetch(query, device_id, since)
+        since = datetime.now(timezone.utc) - _RANGE_MAP[range_key]
+        view = _RANGE_TO_VIEW[range_key]
+
+        rows = await self.db.fetch(_AGG_QUERY.format(view=view), device_id, since)
         points = [dict(r) for r in rows]
-        logger.info(f"Zwrócono {len(points)} rekordów telemetrii dla urządzenia '{device_id}'")
+
+        logger.info(f"Zwrócono {len(points)} rekordów z '{view}' dla urządzenia '{device_id}'")
         return points
 
