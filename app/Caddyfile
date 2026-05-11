@@ -1,4 +1,4 @@
-watering-app.duckdns.org {
+localhost, 127.0.0.1, watering-app.duckdns.org {
     handle /api/* {
         reverse_proxy api:8000
     }
