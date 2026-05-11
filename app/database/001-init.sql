@@ -57,7 +57,13 @@ SELECT
     device_id,
     ROUND((AVG(moisture_lvl) / 65535.0) * 100, 2) AS avg_moisture,
     ROUND((MIN(moisture_lvl) / 65535.0) * 100, 2) AS min_moisture,
-    ROUND((MAX(moisture_lvl) / 65535.0) * 100, 2) AS max_moisture
+    ROUND((MAX(moisture_lvl) / 65535.0) * 100, 2) AS max_moisture,
+    ROUND((AVG(battery_lvl) / 65535.0) * 100, 2) AS avg_battery,
+    ROUND((MIN(battery_lvl) / 65535.0) * 100, 2) AS min_battery,
+    ROUND((MAX(battery_lvl) / 65535.0) * 100, 2) AS max_battery,
+    ROUND((AVG(water_lvl) / 65535.0) * 100, 2)   AS avg_water,
+    ROUND((MIN(water_lvl) / 65535.0) * 100, 2)   AS min_water,
+    ROUND((MAX(water_lvl) / 65535.0) * 100, 2)   AS max_water
 FROM telemetry
 GROUP BY bucket, device_id;
 
@@ -67,7 +73,13 @@ SELECT
     device_id,
     ROUND((AVG(moisture_lvl) / 65535.0) * 100, 2) AS avg_moisture,
     ROUND((MIN(moisture_lvl) / 65535.0) * 100, 2) AS min_moisture,
-    ROUND((MAX(moisture_lvl) / 65535.0) * 100, 2) AS max_moisture
+    ROUND((MAX(moisture_lvl) / 65535.0) * 100, 2) AS max_moisture,
+    ROUND((AVG(battery_lvl) / 65535.0) * 100, 2) AS avg_battery,
+    ROUND((MIN(battery_lvl) / 65535.0) * 100, 2) AS min_battery,
+    ROUND((MAX(battery_lvl) / 65535.0) * 100, 2) AS max_battery,
+    ROUND((AVG(water_lvl) / 65535.0) * 100, 2)   AS avg_water,
+    ROUND((MIN(water_lvl) / 65535.0) * 100, 2)   AS min_water,
+    ROUND((MAX(water_lvl) / 65535.0) * 100, 2)   AS max_water
 FROM telemetry
 GROUP BY bucket, device_id;
 
@@ -77,7 +89,13 @@ SELECT
     device_id,
     ROUND((AVG(moisture_lvl) / 65535.0) * 100, 2) AS avg_moisture,
     ROUND((MIN(moisture_lvl) / 65535.0) * 100, 2) AS min_moisture,
-    ROUND((MAX(moisture_lvl) / 65535.0) * 100, 2) AS max_moisture
+    ROUND((MAX(moisture_lvl) / 65535.0) * 100, 2) AS max_moisture,
+    ROUND((AVG(battery_lvl) / 65535.0) * 100, 2) AS avg_battery,
+    ROUND((MIN(battery_lvl) / 65535.0) * 100, 2) AS min_battery,
+    ROUND((MAX(battery_lvl) / 65535.0) * 100, 2) AS max_battery,
+    ROUND((AVG(water_lvl) / 65535.0) * 100, 2)   AS avg_water,
+    ROUND((MIN(water_lvl) / 65535.0) * 100, 2)   AS min_water,
+    ROUND((MAX(water_lvl) / 65535.0) * 100, 2)   AS max_water
 FROM telemetry
 GROUP BY bucket, device_id;
 

@@ -6,27 +6,28 @@ from schemas.telemetry import TelemetryCreate
 logger = logging.getLogger(__name__)
 
 _RANGE_TO_VIEW: dict[str, str] = {
-    "1d":  "telemetry_15m",
+    "24h": "telemetry_15m",
     "7d":  "telemetry_1h",
     "30d": "telemetry_1d",
 }
 
 _RANGE_MAP: dict[str, timedelta] = {
-    "1d":  timedelta(days=1),
+    "24h": timedelta(hours=24),
     "7d":  timedelta(days=7),
     "30d": timedelta(days=30),
 }
 
 _AGG_QUERY = """
     SELECT
-        bucket,
-        avg_moisture,
-        min_moisture,
-        max_moisture
+        bucket       AS time,
+        avg_moisture AS moisture_lvl,
+        avg_battery  AS battery_lvl,
+        avg_water    AS water_lvl
     FROM {view}
     WHERE device_id = $1 AND bucket >= $2
-    ORDER BY bucket ASC
+    ORDER BY time ASC
 """
+
 
 class TelemetryService:
     def __init__(self, db_session: asyncpg.Connection = None):

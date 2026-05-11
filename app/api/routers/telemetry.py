@@ -42,9 +42,9 @@ async def get_telemetry_history(
     device_id: str,
     user_id: Annotated[int, Depends(get_current_user_id)],
     service: Annotated[TelemetryService, Depends(get_telemetry_service)],
-    range_key: str = Query(default="1d", pattern="^(1d|7d|30d)$"),
+    range: str = Query(default="24h", pattern="^(24h|7d|30d)$"),
 ) -> list[dict]:
     try:
-        return await service.get_telemetry_history(device_id, user_id, range_key)
+        return await service.get_telemetry_history(device_id, user_id, range)
     except PermissionError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Brak dostępu do urządzenia")

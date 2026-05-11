@@ -14,9 +14,9 @@ class TelemetryStatusResponse(BaseModel):
 
 class TelemetryPoint(BaseModel):
     time: datetime
-    moisture_lvl: int
-    battery_lvl: int
-    water_lvl: int
+    moisture_lvl: float
+    battery_lvl: float
+    water_lvl: float
 
 class DeviceResponse(BaseModel):
     device_id: str
