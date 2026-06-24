@@ -3,3 +3,23 @@ serv/build/
 pico-client/build
 .gdb_history
 pico-client/.gdb_history
+.idea/
+
+# Secrets & TLS certs
+app/certs/
+.env
+**/.env
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# Node / Frontend
+front/node_modules/
+front/dist/
+front/.vite/
+front/.next/
