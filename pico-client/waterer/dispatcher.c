@@ -7,16 +7,13 @@
 #include "hardware/sync.h"
 #include "shared_mem.h"
 
-#include "lwip/tcp.h"
-
 #include "dispatcher.h"
-
 #include "reset.h"
 
 
 #define SLOT_SIZE (SLOT1_ORIGIN - SLOT0_ORIGIN)
 
-extern struct tcp_pcb *main_tcp;
+extern void w_get_watering_stats(get_watering_ctx_t *ctx);
 
 uint8_t tx_buf[sizeof(packet_t)];
 
@@ -62,18 +59,18 @@ set_running_slot(uint8_t slot_id)
 }
 
 void
-dispatch(packet_t *in_packet, uint16_t len)
+dispatch(packet_t *in_packet, uint16_t len, struct tcp_pcb *tpcb)
 {
   const uint8_t cmd = in_packet->header.cmd_ack;
   const uint16_t msg_id = in_packet->header.msg_id;
 
   if (dispatch_table[cmd] == NULL) {
-    send_error_response(ACK_CMD_ERR, msg_id);
+    send_error_response(tpcb, ACK_CMD_ERR, msg_id);
     return;
   }
 
   if (len != sizeof(header_t) + in_packet->header.length) {
-    send_error_response(ACK_LEN_ERR, msg_id);
+    send_error_response(tpcb, ACK_LEN_ERR, msg_id);
     return;
   }
 
@@ -84,22 +81,22 @@ dispatch(packet_t *in_packet, uint16_t len)
     ack = cmd;
   }
 
-  send_ok_response(ack, msg_id, resp_len);
+  send_ok_response(tpcb, ack, msg_id, resp_len);
 }
 
 void
-send_response(packet_t *packet)
+send_response(struct tcp_pcb *tpcb, packet_t *packet)
 {
 
   uint8_t *data = (uint8_t *)packet;
 
   printf("Sending packet of size :%u, header: %02X\n", sizeof(header_t) + packet->header.length, packet->header.cmd_ack);
 
-  tcp_write(main_tcp, packet, (sizeof(header_t) + packet->header.length), TCP_WRITE_FLAG_MORE);
+  tcp_write(tpcb, packet, (sizeof(header_t) + packet->header.length), TCP_WRITE_FLAG_MORE);
 }
 
 void
-send_error_response(uint8_t ack, uint16_t msg_id)
+send_error_response(struct tcp_pcb *tpcb, uint8_t ack, uint16_t msg_id)
 {
   packet_t *packet = (packet_t *)tx_buf;
 
@@ -107,11 +104,11 @@ send_error_response(uint8_t ack, uint16_t msg_id)
   packet->header.msg_id = msg_id;
   packet->header.length = 0;
 
-  send_response(packet);
+  send_response(tpcb, packet);
 }
 
 void
-send_ok_response(uint8_t ack, uint16_t msg_id, uint16_t length)
+send_ok_response(struct tcp_pcb *tpcb, uint8_t ack, uint16_t msg_id, uint16_t length)
 {
   packet_t *packet = (packet_t *)tx_buf;
 
@@ -119,7 +116,7 @@ send_ok_response(uint8_t ack, uint16_t msg_id, uint16_t length)
   packet->header.msg_id = msg_id;
   packet->header.length = length;
 
-  send_response(packet);
+  send_response(tpcb, packet);
 }
 
 // TCP commands
@@ -312,12 +309,8 @@ get_info_handle(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len)
 uint8_t
 get_watering_ctx(packet_t *in_packet, packet_t *out_packet, uint16_t *out_len)
 {
-  out_packet->data.get_ctx.water_lvl = 0xA5;
-  out_packet->data.get_ctx.battery_lvl = 0xA5;
-  out_packet->data.get_ctx.moisture_lvl = 0xDEAD;
-  out_packet->data.get_ctx.uptime = to_ms_since_boot(get_absolute_time());
-
-  *out_len = 8;
+  w_get_watering_stats(&out_packet->data.get_ctx);
+  *out_len = sizeof(get_watering_ctx_t);
   
   return ACK_OK;
 }
