@@ -6,6 +6,7 @@
 #define UART_TASK_INDEX     0
 #define DISP_TASK_INDEX     1
 #define WD_TASK_INDEX       2
+#define WATERER_TASK_INDEX  3
 
 #include "hardware/sync.h"
 #include "pico/time.h"

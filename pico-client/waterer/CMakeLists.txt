@@ -1,3 +1,12 @@
+cmake_minimum_required(VERSION 3.13)
+
+set(PICO_BOARD pico_w)
+
+if (NOT TARGET pico_stdlib)
+  include(pico_sdk_import.cmake)
+  project(watering LANGUAGES C CXX ASM VERSION 0.0.1)
+endif()
+
 function(create_slot_target slot_name flash_offset)
   set(
     FLASH_ORIGIN ${flash_offset}
@@ -10,9 +19,11 @@ function(create_slot_target slot_name flash_offset)
     main.c
     dispatcher.c
     sched.c
+    tcp_client.c
+    waterer.c
     ../common/shared_mem.c
-    ${CMAKE_SOURCE_DIR}/common/crc.c
-    ${CMAKE_SOURCE_DIR}/../common/helpers.c
+    ${CMAKE_SOURCE_DIR}/../common/crc.c
+    ${CMAKE_SOURCE_DIR}/../../common/helpers.c
   )
 
   pico_enable_stdio_usb(${target_name} 1)
@@ -20,33 +31,34 @@ function(create_slot_target slot_name flash_offset)
 
   target_include_directories(${target_name} PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
-    ${CMAKE_CURRENT_LIST_DIR}/common/
+    ${CMAKE_CURRENT_LIST_DIR}/../common/
     ${CMAKE_CURRENT_LIST_DIR}/..
+    ${CMAKE_CURRENT_LIST_DIR}/../../common/
   )
 
   target_link_libraries(${target_name}
     pico_cyw43_arch_lwip_threadsafe_background
+    pico_lwip
     pico_stdlib
-    hardware_sleep
     hardware_i2c
     hardware_clocks
-    hardware_rosc
     hardware_irq
+    hardware_spi
+    hardware_adc
+    hardware_watchdog
   )
 
   # Create linker script with correct origin
   set(linker_script "${CMAKE_CURRENT_BINARY_DIR}/watering_${slot_name}.ld")
   set(ORIGIN ${flash_offset})
   configure_file(
-    "${CMAKE_SOURCE_DIR}/waterer/waterer.ld.in"
+    "${CMAKE_SOURCE_DIR}/waterer.ld.in"
     "${linker_script}"
     @ONLY
   )
 
-  # Use the custom linker script
   pico_set_linker_script(${target_name} "${linker_script}")
 
-  # Add extra outputs
   pico_add_extra_outputs(${target_name})
 
   # Rename output files

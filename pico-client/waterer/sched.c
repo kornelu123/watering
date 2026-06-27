@@ -1,26 +1,18 @@
 #include <stdio.h>
-
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 
 #include "sched.h"
 
-#include "pico/sleep.h"
-
-#include "hardware/pll.h"
-#include "hardware/regs/clocks.h"
-#include "hardware/clocks.h"
-#include "hardware/watchdog.h"
-#include "hardware/xosc.h"
-#include "hardware/rosc.h"
-#include "hardware/regs/io_bank0.h"
-
-#include "hardware/structs/scb.h"
+#include "hardware/timer.h"
+#include "hardware/irq.h" 
+#include "pico/sync.h"
 
 #include "uart_task.c"
 #include "disp_task.c"
 #include "wd_task.c"
+#include "waterer_task.c"
 
 #define MIN_SCHED_TIMEOUT_MS 10000
 
@@ -72,7 +64,8 @@ init_task(const uint32_t timeout_ms, const char *name, task_fn task_function, ta
   task.timeout_ms = timeout_ms;
   task.realise = task_function;
   task.init = init_function;
-
+  task.name = (char *)name;
+  
   enable_task(&task);
 
   return task;
@@ -89,6 +82,11 @@ init_tasks(void)
 
   task_ctx_t wd_task_ctx = init_task(4000, "Watchdog task", &wd_task, &wd_init, WD_TASK_INDEX);
   add_task(&wd_task_ctx);
+
+  task_ctx_t waterer_task_ctx = init_task(3000, "Waterer task", &waterer_task, &waterer_init, WATERER_TASK_INDEX);
+  add_task(&waterer_task_ctx);
+
+  return 0;
 }
 
   int
