@@ -63,6 +63,8 @@ create_get_running_slot_packet(const uint16_t msg_id, pico_ctx_t *pico_ctx)
   out_buf->header.cmd_ack = READ_RUNNING_SLOT_CMD;
   out_buf->header.msg_id = msg_id;
   out_buf->header.length = 0;
+
+  return 0;
 }
 
   void
@@ -91,18 +93,20 @@ create_reset_packet(const uint16_t msg_id, pico_ctx_t *pico_ctx)
 create_set_name_packet(const uint8_t *name, const uint16_t msg_id, pico_ctx_t *pico_ctx)
 {
   packet_t *out_buf = &(pico_ctx->out_buf);
+  size_t len = 0;
 
   out_buf->header.cmd_ack = SET_NAME_CMD;
   out_buf->header.msg_id = msg_id;
 
-  strncpy(out_buf->data.set_name.name, name, MAX_NAME_LEN);
-
-  int len = strlen(name);
-  if (len > MAX_NAME_LEN) {
-    len = MAX_NAME_LEN;
+  while (len < MAX_NAME_LEN && name[len] != '\0') {
+    len++;
+  }
+  memcpy(out_buf->data.set_name.name, name, len);
+  if (len < MAX_NAME_LEN) {
+    memset(out_buf->data.set_name.name + len, 0, MAX_NAME_LEN - len);
   }
 
-  out_buf->header.length = 1 + len;
+  out_buf->header.length = len;
 }
 
   void
@@ -112,7 +116,7 @@ create_get_info_packet(const uint16_t msg_id, pico_ctx_t *pico_ctx)
 
   out_buf->header.cmd_ack = GET_INFO_CMD;
   out_buf->header.msg_id = msg_id;
-  out_buf->header.length = 1;
+  out_buf->header.length = 0;
 }
 
   void
@@ -122,7 +126,7 @@ create_get_ctx_packet(const uint16_t msg_id, pico_ctx_t *pico_ctx)
 
   out_buf->header.cmd_ack = GET_WATERING_CTX_CMD;
   out_buf->header.msg_id = msg_id;
-  out_buf->header.length = 1;
+  out_buf->header.length = 0;
 }
 
   void
@@ -132,7 +136,7 @@ create_water_trigger_packet(const uint16_t msg_id, pico_ctx_t *pico_ctx, const u
 
   out_buf->header.cmd_ack = TRIGGER_WATER_CMD;
   out_buf->header.msg_id = msg_id;
-  out_buf->header.length = 1 + sizeof(trigger_water_ctx_t);
+  out_buf->header.length = sizeof(trigger_water_ctx_t);
   out_buf->data.trigger_water.time_ms = time_ms;
 }
 
@@ -143,7 +147,7 @@ create_watering_time_packet(const uint16_t msg_id, pico_ctx_t *pico_ctx, const u
 
   out_buf->header.cmd_ack = SET_WATERING_TIME;
   out_buf->header.msg_id = msg_id;
-  out_buf->header.length = 1 + sizeof(set_watering_time_t);
+  out_buf->header.length = sizeof(set_watering_time_t);
   out_buf->data.set_water.time_ms = time_ms;
 }
 
@@ -154,7 +158,7 @@ create_water_threshold_packet(const uint16_t msg_id, pico_ctx_t *pico_ctx, const
 
   out_buf->header.cmd_ack = SET_WATER_THRESHOLD;
   out_buf->header.msg_id = msg_id;
-  out_buf->header.length = 1 + sizeof(set_watering_threshold_t);
+  out_buf->header.length = sizeof(set_watering_threshold_t);
   out_buf->data.set_thresh.threshold = threshold;
 }
 

@@ -62,7 +62,8 @@ jobs:
 
                 cd /workspace/serv && \
                 chmod +x build.sh && \
-                make
+                make && \
+                make test
                 "
 
       - name: Upload Pico
