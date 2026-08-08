@@ -25,9 +25,7 @@
       return NULL; \
     } \
     \
-    STORE_STRUCT *item = &NAME##_buf.data[NAME##_buf.first]; \
-    NAME##_buf.first = (NAME##_buf.first + 1) % RINGBUF_STRUCT_COUNT; \
-    return item; \
+    return &NAME##_buf.data[NAME##_buf.first++]; \
   } \
     \
   int NAME##_ringbuf_push(STORE_STRUCT *data) \
@@ -37,8 +35,8 @@
       return -1; \
     } \
     \
-    memcpy(&(NAME##_buf.data[NAME##_buf.cur]), data, sizeof(STORE_STRUCT)); \
     NAME##_buf.cur = next_cur; \
+    memcpy(&(NAME##_buf.data[NAME##_buf.cur]), data, sizeof(STORE_STRUCT)); \
     return 0; \
   } \
     \

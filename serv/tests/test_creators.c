@@ -30,29 +30,32 @@ int main(void)
   check_header(&ctx, READ_RUNNING_SLOT_CMD, 1, 0);
 
   create_get_info_packet(2, &ctx);
-  check_header(&ctx, GET_INFO_CMD, 2, 0);
+  check_header(&ctx, GET_INFO_CMD, 2, 1);
 
   create_get_ctx_packet(3, &ctx);
-  check_header(&ctx, GET_WATERING_CTX_CMD, 3, 0);
+  check_header(&ctx, GET_WATERING_CTX_CMD, 3, 1);
 
   create_set_active_slot_packet(1, 4, &ctx);
   check_header(&ctx, SET_ACTIVE_SLOT_CMD, 4, sizeof(set_active_slot_t));
   assert(ctx.out_buf.data.set_active_slot.slot_id == 1);
 
   create_set_name_packet((const uint8_t *)"fern", 5, &ctx);
-  check_header(&ctx, SET_NAME_CMD, 5, 4);
+  check_header(&ctx, SET_NAME_CMD, 5, 5);
   assert(memcmp(ctx.out_buf.data.set_name.name, "fern", 4) == 0);
 
   create_water_trigger_packet(6, &ctx, 2500);
-  check_header(&ctx, TRIGGER_WATER_CMD, 6, sizeof(trigger_water_ctx_t));
+  check_header(&ctx, TRIGGER_WATER_CMD, 6,
+               1 + sizeof(trigger_water_ctx_t));
   assert(ctx.out_buf.data.trigger_water.time_ms == 2500);
 
   create_watering_time_packet(7, &ctx, 3000);
-  check_header(&ctx, SET_WATERING_TIME, 7, sizeof(set_watering_time_t));
+  check_header(&ctx, SET_WATERING_TIME, 7,
+               1 + sizeof(set_watering_time_t));
   assert(ctx.out_buf.data.set_water.time_ms == 3000);
 
   create_water_threshold_packet(8, &ctx, 700);
-  check_header(&ctx, SET_WATER_THRESHOLD, 8, sizeof(set_watering_threshold_t));
+  check_header(&ctx, SET_WATER_THRESHOLD, 8,
+               1 + sizeof(set_watering_threshold_t));
   assert(ctx.out_buf.data.set_thresh.threshold == 700);
 
   create_peer_discovery_packet(9, &ctx, ROLE_DISPLAYER, 0x01020304);
