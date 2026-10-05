@@ -26,7 +26,7 @@ function(create_slot_target slot_name flash_offset)
     gpio_irq.c
     hal/src/hal_adc.c
     hal/src/hal_gpio.c
-    hal/src/hal_qled_ssd1306.c
+    hal/src/hal_qled.c
     hal/src/hal_flash.c
     ../common/dispatcher.c
     ../common/sched.c
@@ -97,6 +97,7 @@ function(create_slot_target slot_name flash_offset)
     PROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
     PROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
     PROJECT_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+    USE_SSD1306=1
   )
   unset(
       FLASH_ORIGIN
