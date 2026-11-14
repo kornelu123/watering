@@ -119,6 +119,7 @@ void set_pixel(int x, int y) {
   if (x < 0 || x >= EPD_WIDTH || y < 0 || y >= EPD_HEIGHT) return;
   x = (EPD_WIDTH - 7) - x;
   y = y + 1;
+  if (x < 0 || x >= EPD_WIDTH || y < 0 || y >= EPD_HEIGHT) return;
   int idx = y * X_BYTES + (x >> 3);
   int bit = 7 - (x & 7);
   framebuf[idx] &= ~(1 << bit);
@@ -163,13 +164,14 @@ void draw_logo() {
 }
 
 void draw_string(int x0, int y0, const char *s) {
-  int x = x0;
-  int y = y0;
   const int spacing = 7;
   const int line_height = 10;
   
   if (x0 < 0) x0 = 0;
   if (y0 < 0) y0 = 0;
+
+  int x = x0;
+  int y = y0;
   
   while (*s) {
     if (y >= EPD_HEIGHT) return;
