@@ -7,6 +7,17 @@ on:
     branches: ["master"]
 
 jobs:
+  test-displayer:
+    name: Test Displayer Renderer
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run displayer renderer tests
+        run: pico-client/displayer/tests/run.sh
+
   build-docker:
     name: Build and Save Docker Image
     runs-on: ubuntu-latest
