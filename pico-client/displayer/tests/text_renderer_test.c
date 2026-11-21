@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include <stdio.h>
 
 void set_pixel(int x, int y);
 
@@ -40,5 +41,6 @@ main(void)
   draw_string(-1, -1, "A");
   assert(black_pixel_count() > 0);
 
+  puts("text renderer tests passed");
   return 0;
 }
